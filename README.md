@@ -12,7 +12,7 @@ The admin page also manages the three homepage offer percentages and blog posts.
 
 ## Orders
 
-Customers can add live products to an order and see an on-card confirmation before reviewing the order and sending product details, specifications, and an optional contact number to WhatsApp. The site does not collect online payments. Product listings are loaded from Supabase without a hard-coded catalog fallback.
+Customers can search live inventory and filter by the Phone, Laptop, Accessory, and Other categories managed in the admin. They can add live products to an order and see an on-card confirmation before reviewing the order and sending product details, specifications, and an optional contact number to WhatsApp. The site does not collect online payments. Product listings are loaded from Supabase without a hard-coded catalog fallback.
 
 ## Configuration and security
 
