@@ -249,6 +249,13 @@ td { padding: 13px 16px; border-top: 1px solid #f0f2f1; color: #5e6a64; font-siz
 .product-dialog textarea { min-height: 88px; padding-top: 9px; resize: vertical; line-height: 1.5; }
 .field-hint { color: #8a948f; font-size: 10px; font-weight: 400; }
 .condition-hint { margin: -9px 0 15px; }
+.specification-group { min-width: 0; margin: 0 0 16px; padding: 12px 12px 2px; border: 1px solid var(--line); border-radius: 8px; }
+.specification-group legend { padding: 0 5px; color: #27342e; font-family: "Manrope", sans-serif; font-size: 12px; font-weight: 700; }
+.specification-group > .field-hint { margin: -3px 0 12px; }
+.specification-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+.specification-grid label { min-width: 0; }
+.specification-grid input { height: 36px; margin-bottom: 12px; }
+.specification-grid .specification-wide { grid-column: 1 / -1; }
 .image-preview-list { display: flex; flex-wrap: wrap; gap: 9px; margin: -5px 0 16px; }
 .image-preview-empty { margin: 0; color: var(--muted); font-size: 10px; }
 .image-preview { position: relative; width: 68px; height: 68px; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: #f4f6f5; }
@@ -300,6 +307,11 @@ td { padding: 13px 16px; border-top: 1px solid #f0f2f1; color: #5e6a64; font-siz
   .table-tools select { flex: 1; }
   th, td { padding-right: 12px; padding-left: 12px; }
   th:first-child, td:first-child { padding-left: 14px; }
+}
+
+@media (max-width: 480px) {
+  .specification-grid { grid-template-columns: 1fr; }
+  .specification-grid .specification-wide { grid-column: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
