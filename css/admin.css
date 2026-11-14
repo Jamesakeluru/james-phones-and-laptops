@@ -184,6 +184,13 @@ h1 { margin-bottom: 6px; font-size: 28px; letter-spacing: -.8px; }
 .announcement-status.error { color: #a34848; }
 #announcement-save-button:disabled { cursor: wait; opacity: .7; }
 
+.promotion-form { padding: 0 21px 20px; }
+.promotion-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; margin-bottom: 12px; }
+.promotion-fields label { display: block; color: #52615a; font-size: 11px; font-weight: 700; }
+.promotion-fields input { width: 100%; height: 40px; margin-top: 6px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--ink); outline: 0; }
+.promotion-fields input:focus { border-color: #7cb39f; outline: 3px solid rgba(21, 116, 92, .1); }
+#promotion-save-button:disabled { cursor: wait; opacity: .7; }
+
 .summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 
 .summary-card {
@@ -205,6 +212,15 @@ h1 { margin-bottom: 6px; font-size: 28px; letter-spacing: -.8px; }
 .summary-card > span { color: #929b96; font-size: 11px; }
 
 .inventory-panel { margin-top: 22px; overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+.blog-admin-panel { margin-top: 22px; }
+.blog-admin-status { margin: 0; padding: 0 21px 12px; color: var(--muted); font-size: 11px; }
+.blog-admin-status.error { color: #a34848; }
+.blog-admin-panel td:first-child { min-width: 220px; white-space: normal; }
+.blog-admin-panel .blog-post-title { color: #27342e; font-weight: 700; }
+.blog-admin-panel .status-pill.draft-post { background: #fff4e5; color: #8b5a11; }
+.blog-admin-panel .empty-state { border-top: 1px solid var(--line); }
+.blog-dialog textarea { white-space: pre-line; }
+
 .panel-heading { display: flex; align-items: center; justify-content: space-between; padding: 20px 21px 16px; }
 .panel-heading h2 { margin: 0 0 4px; font-size: 15px; }
 .panel-heading p { margin: 0; color: var(--muted); font-size: 11px; }
@@ -293,7 +309,7 @@ td { padding: 13px 16px; border-top: 1px solid #f0f2f1; color: #5e6a64; font-siz
   .sidebar { position: static; width: 100%; padding: 13px 16px 9px; border-right: 0; border-bottom: 1px solid var(--line); }
   .brand { padding: 0; }
   .brand-mark { width: 34px; height: 34px; }
-  .side-nav { display: flex; gap: 4px; margin-top: 13px; }
+  .side-nav { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 13px; }
   .nav-link { min-height: 36px; gap: 6px; padding: 0 9px; font-size: 11px; }
   .nav-icon { font-size: 14px; }
   .sidebar-note { display: none; }
@@ -309,6 +325,11 @@ td { padding: 13px 16px; border-top: 1px solid #f0f2f1; color: #5e6a64; font-siz
   .summary-grid { grid-template-columns: 1fr; gap: 9px; }
   .announcement-form { padding: 0 14px 16px; }
   .announcement-options { align-items: start; flex-direction: column; gap: 7px; }
+  .promotion-form { padding: 0 14px 16px; }
+  .promotion-fields { grid-template-columns: 1fr; gap: 7px; }
+  .blog-admin-status { padding: 0 14px 12px; }
+  .blog-admin-panel .panel-heading { align-items: start; gap: 10px; }
+  .blog-admin-panel .panel-heading .primary-button { padding: 0 10px; font-size: 10px; white-space: nowrap; }
   .summary-card { min-height: 88px; padding: 15px; }
   .summary-icon { position: absolute; top: 18px; left: 15px; margin: 0; }
   .summary-card p { top: 17px; left: 59px; }

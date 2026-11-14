@@ -275,6 +275,18 @@
   cursor: not-allowed;
 }
 
+.managed-cart-feedback {
+  min-height: 16px;
+  margin: -7px 15px 11px;
+  color: #15745c;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.managed-cart-feedback.error {
+  color: #a34848;
+}
+
 @media (max-width: 575px) {
   .managed_inventory_section {
     padding-top: 36px;
