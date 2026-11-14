@@ -1062,6 +1062,25 @@ a:focus {
   overflow: hidden;
 }
 
+.client_section .testimonial-avatar {
+  display: grid;
+  height: 145px;
+  place-items: center;
+  border: 7px solid rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  background: #2a201c;
+  color: #fd9c6b;
+  font-family: "Poppins", sans-serif;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.testimonial-section[hidden],
+#testimonial-controls[hidden] {
+  display: none !important;
+}
+
 .client_section .box .img-box img {
   width: 100%;
   border-radius: 100%;
