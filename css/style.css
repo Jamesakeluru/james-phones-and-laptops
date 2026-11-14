@@ -153,6 +153,96 @@ h2 {
   }
 }
 
+.repair-contact-bar {
+  border-bottom: 1px solid #e5ebe7;
+  background: #f5f8f6;
+  color: #17241f;
+}
+
+.repair-contact-inner {
+  display: flex;
+  min-height: 66px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+.repair-contact-copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  font-size: 12px;
+}
+
+.repair-contact-copy strong {
+  color: #15745c;
+  font-size: 13px;
+}
+
+.repair-contact-copy span {
+  color: #53615a;
+}
+
+.repair-contact-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.repair-contact-button {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 13px;
+  border: 1px solid #15745c;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.repair-call-button {
+  background: #ffffff;
+  color: #15745c;
+}
+
+.repair-whatsapp-button {
+  background: #15745c;
+  color: #ffffff;
+}
+
+.repair-contact-button:hover,
+.repair-contact-button:focus-visible {
+  background: #105e4a;
+  color: #ffffff;
+}
+
+.repair-contact-button:focus-visible {
+  outline: 2px solid rgba(21, 116, 92, .3);
+  outline-offset: 2px;
+}
+
+@media (max-width: 575px) {
+  .repair-contact-inner {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .repair-contact-actions {
+    width: 100%;
+  }
+
+  .repair-contact-button {
+    flex: 1;
+    padding: 0 8px;
+  }
+}
+
 .custom_nav-container {
   padding-left: 0;
   padding-right: 0;
@@ -536,6 +626,112 @@ a:focus {
   line-height: 1.8;
 }
 
+.about-page-section {
+  padding: 72px 0;
+  background: #ffffff;
+}
+
+.about-page-section .row {
+  align-items: center;
+}
+
+.about-page-section .img-box {
+  padding: 18px 22px 18px 0;
+}
+
+.about-page-section .img-box::before {
+  top: 0;
+  left: 0;
+  width: 76%;
+  height: 78%;
+  border-radius: 12px;
+  background: #eaf4f0;
+}
+
+.about-page-section .img-box img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.about-page-section .heading_container {
+  gap: 9px;
+}
+
+.about-page-eyebrow {
+  margin: 0 !important;
+  color: #15745c !important;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+
+.about-page-section .heading_container h1 {
+  margin: 0;
+  color: #160e0b;
+  font-family: "Playfair Display", serif;
+  font-size: clamp(30px, 3.5vw, 43px);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.about-page-section .detail-box > p {
+  margin: 14px 0;
+  color: #53615a;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.about-page-services {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+  margin-top: 22px;
+}
+
+.about-service-card {
+  padding: 16px;
+  border: 1px solid #e5ebe7;
+  border-radius: 9px;
+  background: #fbfcfb;
+}
+
+.about-service-card h2 {
+  margin: 0 0 7px;
+  color: #15745c;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.about-service-card p {
+  margin: 0 !important;
+  color: #53615a !important;
+  font-size: 12px;
+  line-height: 1.6 !important;
+}
+
+.about-location {
+  margin-top: 15px;
+  padding: 16px;
+  border-radius: 9px;
+  background: #eaf4f0;
+}
+
+.about-location strong {
+  color: #15745c;
+  font-size: 13px;
+}
+
+.about-location p {
+  margin: 5px 0 0 !important;
+  color: #53615a !important;
+  font-size: 12px;
+  line-height: 1.6 !important;
+}
+
 .about-service-banner {
   margin-top: 22px;
   padding: 22px 20px 18px;
@@ -589,6 +785,23 @@ a:focus {
 .about-service-banner a:hover {
   background-color: transparent;
   color: #15745c;
+}
+
+@media (max-width: 767px) {
+  .about-page-section {
+    padding: 44px 0;
+  }
+
+  .about-page-section .img-box {
+    margin-bottom: 24px;
+    padding: 16px 16px 16px 0;
+  }
+}
+
+@media (max-width: 575px) {
+  .about-page-services {
+    grid-template-columns: 1fr;
+  }
 }
 
 .offer_section .row > div {
