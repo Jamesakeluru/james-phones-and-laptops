@@ -26,6 +26,7 @@
   var conditionHint = document.getElementById("condition-hint");
   var imageInput = document.getElementById("product-images");
   var imagePreviewList = document.getElementById("image-preview-list");
+  var specificationGroups = Array.prototype.slice.call(document.querySelectorAll(".specification-group"));
 
   var imageBucket = "product-images";
   var maxImageCount = 4;
@@ -70,7 +71,8 @@
       products = result.data.map(function (product) {
         return Object.assign({}, product, {
           price: Number(product.price),
-          specifications: specificationLines(product.specifications),
+          stock: product.stock === null || product.stock === undefined ? null : Number(product.stock),
+          specifications: normalizeSpecifications(product.specifications),
           images: productImageUrls(product)
         });
       });
@@ -83,40 +85,68 @@
     }
   }
 
-  function specificationLines(value) {
+  function normalizeSpecifications(value) {
+    var specifications = {};
     if (Array.isArray(value)) {
-      return value.map(String);
+      value.forEach(function (line, index) {
+        var text = String(line).trim();
+        var separator = text.indexOf(":");
+        var key = separator > 0 ? text.slice(0, separator).trim() : "Additional detail " + (index + 1);
+        var detail = separator > 0 ? text.slice(separator + 1).trim() : text;
+        if (key && detail) {
+          specifications[key] = detail;
+        }
+      });
+      return specifications;
     }
     if (value && typeof value === "object") {
-      return Object.keys(value).map(function (key) {
-        return key + ": " + String(value[key]);
+      Object.keys(value).forEach(function (key) {
+        var detail = value[key] === null || value[key] === undefined ? "" : String(value[key]).trim();
+        if (key.trim() && detail) {
+          specifications[key.trim()] = detail;
+        }
       });
     }
-    return [];
+    return specifications;
   }
 
-  function parseSpecifications(text) {
-    var lines = text.split(/\r?\n/).map(function (line) {
-      return line.trim();
-    }).filter(Boolean);
+  function specificationEntries(value) {
+    var specifications = normalizeSpecifications(value);
+    return Object.keys(specifications).map(function (key) {
+      return { label: key, value: specifications[key] };
+    });
+  }
+
+  function configureSpecificationFields() {
+    specificationGroups.forEach(function (group) {
+      var isGeneralGroup = group.dataset.specCategory === "Other";
+      group.hidden = isGeneralGroup
+        ? categoryInput.value === "Phone" || categoryInput.value === "Laptop"
+        : group.dataset.specCategory !== categoryInput.value;
+    });
+  }
+
+  function populateSpecificationFields(value) {
+    var specifications = normalizeSpecifications(value);
+    Array.prototype.forEach.call(form.querySelectorAll("[data-spec-key]"), function (input) {
+      input.value = specifications[input.dataset.specKey] || "";
+    });
+  }
+
+  function collectSpecificationFields() {
     var specifications = {};
-    for (var index = 0; index < lines.length; index += 1) {
-      var separator = lines[index].indexOf(":");
-      if (separator <= 0 || !lines[index].slice(separator + 1).trim()) {
-        throw new Error("Write each specification as “Name: value”, one per line.");
-      }
-      var key = lines[index].slice(0, separator).trim();
-      var value = lines[index].slice(separator + 1).trim();
-      if (Object.prototype.hasOwnProperty.call(specifications, key)) {
-        throw new Error("Each specification name must be unique.");
-      }
-      Object.defineProperty(specifications, key, {
-        value: value,
-        enumerable: true,
-        configurable: true,
-        writable: true
-      });
+    var activeGroup = specificationGroups.find(function (group) {
+      return !group.hidden;
+    });
+    if (!activeGroup) {
+      return specifications;
     }
+    Array.prototype.forEach.call(activeGroup.querySelectorAll("[data-spec-key]"), function (input) {
+      var value = input.value.trim();
+      if (value) {
+        specifications[input.dataset.specKey] = value;
+      }
+    });
     return specifications;
   }
 
@@ -279,7 +309,9 @@
     var category = categoryFilter.value;
     var filtered = products.filter(function (product) {
       var searchable = product.name + " " + (product.description || "") + " " +
-        (product.product_condition || "") + " " + product.specifications.join(" ");
+        (product.product_condition || "") + " " + specificationEntries(product.specifications).map(function (item) {
+          return item.label + " " + item.value;
+        }).join(" ");
       var matchesQuery = searchable.toLowerCase().indexOf(query) !== -1;
       var matchesCategory = category === "all" || product.category === category;
       return matchesQuery && matchesCategory;
@@ -313,15 +345,16 @@
       row.appendChild(createCell(stockIsKnown ? String(product.stock) : "Not set", "stock-pill"));
 
       var specsCell = document.createElement("td");
-      if (product.specifications.length) {
+      var specificationList = specificationEntries(product.specifications);
+      if (specificationList.length) {
         var specs = document.createElement("details");
         specs.className = "specs-details";
         var summary = document.createElement("summary");
-        summary.textContent = "View (" + product.specifications.length + ")";
+        summary.textContent = "View (" + specificationList.length + ")";
         var specsList = document.createElement("ul");
-        product.specifications.forEach(function (specification) {
+        specificationList.forEach(function (specification) {
           var item = document.createElement("li");
-          item.textContent = specification;
+          item.textContent = specification.label + ": " + specification.value;
           specsList.appendChild(item);
         });
         specs.appendChild(summary);
@@ -387,10 +420,11 @@
     form.elements.name.value = product ? product.name : "";
     categoryInput.value = product ? product.category : "Phone";
     configureConditionOptions(product ? product.product_condition : "");
+    configureSpecificationFields();
     form.elements.description.value = product ? (product.description || "") : "";
-    form.elements.specifications.value = product ? product.specifications.join("\n") : "";
+    populateSpecificationFields(product ? product.specifications : {});
     form.elements.price.value = product ? product.price : "";
-    form.elements.stock.value = product && product.stock !== null ? product.stock : "";
+    form.elements.stock.value = product && Number.isInteger(product.stock) ? product.stock : "";
     form.elements.active.checked = !product || product.active !== false;
     retainedImageUrls = product ? productImageUrls(product) : [];
     imageInput.value = "";
@@ -503,6 +537,7 @@
   categoryFilter.addEventListener("change", render);
   categoryInput.addEventListener("change", function () {
     configureConditionOptions(conditionInput.value);
+    configureSpecificationFields();
   });
 
   imageInput.addEventListener("change", function () {
@@ -630,9 +665,11 @@
     event.preventDefault();
     formError.textContent = "";
     var price = Number(form.elements.price.value);
-    var stock = Number(form.elements.stock.value);
-    if (!Number.isFinite(price) || price < 0 || !Number.isInteger(stock) || stock < 0) {
-      formError.textContent = "Enter a valid price and a whole number of units in stock.";
+    var stockText = form.elements.stock.value.trim();
+    var stock = stockText ? Number(stockText) : null;
+    if (!Number.isFinite(price) || price < 0 ||
+        (stock !== null && (!Number.isInteger(stock) || stock < 0))) {
+      formError.textContent = "Enter a valid price and, if known, a whole number of units in stock.";
       return;
     }
 
@@ -651,13 +688,7 @@
       formError.textContent = "A product can have up to " + maxImageCount + " photos.";
       return;
     }
-    var specifications;
-    try {
-      specifications = parseSpecifications(form.elements.specifications.value);
-    } catch (error) {
-      formError.textContent = error.message;
-      return;
-    }
+    var specifications = collectSpecificationFields();
 
     var submitButton = form.querySelector('button[type="submit"]');
     var uploadedImageUrls = [];
@@ -676,7 +707,7 @@
         product_condition: condition || null,
         description: form.elements.description.value.trim(),
         images: images,
-        image_url: images.length ? images[0] : null,
+        image_url: images.length ? images[0] : "",
         active: form.elements.active.checked,
         stock: stock,
         price: price,
