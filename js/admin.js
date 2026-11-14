@@ -3,12 +3,18 @@
 
   var products = [];
   var blogPosts = [];
+  var testimonials = [];
   var editingId = null;
   var editingBlogId = null;
+  var editingTestimonialId = null;
   var client = null;
   var adminUserId = null;
   var retainedImageUrls = [];
   var selectedImageFiles = [];
+  var offerImageUrls = [null, null, null];
+  var selectedOfferImageFiles = [null, null, null];
+  var offerImageRemovalPending = [false, false, false];
+  var offerImagePreviewUrls = [null, null, null];
 
   var authScreen = document.getElementById("auth-screen");
   var adminShell = document.getElementById("admin-shell");
@@ -42,6 +48,27 @@
     document.getElementById("offer-two-percent"),
     document.getElementById("offer-three-percent")
   ];
+  var offerImageInputs = [
+    document.getElementById("offer-one-image"),
+    document.getElementById("offer-two-image"),
+    document.getElementById("offer-three-image")
+  ];
+  var offerImagePreviews = [
+    document.getElementById("offer-one-image-preview"),
+    document.getElementById("offer-two-image-preview"),
+    document.getElementById("offer-three-image-preview")
+  ];
+  var offerImageHints = [
+    document.getElementById("offer-one-image-hint"),
+    document.getElementById("offer-two-image-hint"),
+    document.getElementById("offer-three-image-hint")
+  ];
+  var offerImageRemoveButtons = [
+    document.getElementById("offer-one-image-remove"),
+    document.getElementById("offer-two-image-remove"),
+    document.getElementById("offer-three-image-remove")
+  ];
+  var defaultOfferImageUrls = ["13promax.png", "phone1.jpeg", "13.png"];
   var blogList = document.getElementById("blog-post-list");
   var blogEmptyState = document.getElementById("blog-empty-state");
   var blogStatus = document.getElementById("blog-admin-status");
@@ -49,6 +76,13 @@
   var blogForm = document.getElementById("blog-form");
   var blogFormError = document.getElementById("blog-form-error");
   var blogSaveButton = document.getElementById("blog-save-button");
+  var testimonialList = document.getElementById("testimonial-list");
+  var testimonialEmptyState = document.getElementById("testimonial-empty-state");
+  var testimonialStatus = document.getElementById("testimonial-admin-status");
+  var testimonialDialog = document.getElementById("testimonial-dialog");
+  var testimonialForm = document.getElementById("testimonial-form");
+  var testimonialFormError = document.getElementById("testimonial-form-error");
+  var testimonialSaveButton = document.getElementById("testimonial-save-button");
   var specificationGroups = Array.prototype.slice.call(document.querySelectorAll(".specification-group"));
 
   var imageBucket = "product-images";
@@ -147,12 +181,40 @@
     promotionStatus.classList.toggle("error", Boolean(isError));
   }
 
+  function renderOfferImagePreview(index) {
+    var hasSelectedFile = Boolean(selectedOfferImageFiles[index]);
+    var useDefaultImage = offerImageRemovalPending[index] || !offerImageUrls[index];
+    offerImagePreviews[index].src = hasSelectedFile
+      ? offerImagePreviewUrls[index]
+      : (useDefaultImage ? defaultOfferImageUrls[index] : offerImageUrls[index]);
+    offerImageHints[index].textContent = hasSelectedFile
+      ? "Selected image will be uploaded when you save."
+      : offerImageRemovalPending[index]
+        ? "The default image will be used after you save."
+        : offerImageUrls[index]
+          ? "Custom offer image saved."
+          : "Using the default storefront image.";
+    offerImageRemoveButtons[index].hidden = !hasSelectedFile && !offerImageUrls[index];
+    offerImageRemoveButtons[index].textContent = hasSelectedFile
+      ? "Discard selected image"
+      : offerImageRemovalPending[index]
+        ? "Keep current image"
+        : "Use default image";
+  }
+
+  function clearOfferImagePreviewUrl(index) {
+    if (offerImagePreviewUrls[index]) {
+      URL.revokeObjectURL(offerImagePreviewUrls[index]);
+      offerImagePreviewUrls[index] = null;
+    }
+  }
+
   async function loadPromotions() {
-    setPromotionStatus("Loading offer percentages...", false);
+    setPromotionStatus("Loading offers...", false);
     try {
       var result = await client
         .from("store_promotions")
-        .select("offer_one_percent, offer_two_percent, offer_three_percent")
+        .select("offer_one_percent, offer_two_percent, offer_three_percent, offer_one_image_url, offer_two_image_url, offer_three_image_url")
         .eq("id", 1)
         .single();
       if (result.error) {
@@ -165,11 +227,23 @@
       ].forEach(function (value, index) {
         offerInputs[index].value = String(value);
       });
-      setPromotionStatus("Offer percentages loaded.", false);
+      offerImageUrls = [
+        result.data.offer_one_image_url || null,
+        result.data.offer_two_image_url || null,
+        result.data.offer_three_image_url || null
+      ];
+      offerImageUrls.forEach(function (url, index) {
+        selectedOfferImageFiles[index] = null;
+        offerImageRemovalPending[index] = false;
+        clearOfferImagePreviewUrl(index);
+        offerImageInputs[index].value = "";
+        renderOfferImagePreview(index);
+      });
+      setPromotionStatus("Offers loaded.", false);
       return true;
     } catch (error) {
-      console.error("Could not load store offer percentages.", error);
-      setPromotionStatus("Could not load offer percentages. " + (error.message || "Check your connection and try again."), true);
+      console.error("Could not load store offers.", error);
+      setPromotionStatus("Could not load offers. " + (error.message || "Check your connection and try again."), true);
       return false;
     }
   }
@@ -268,6 +342,89 @@
     blogForm.elements.is_published.checked = Boolean(post && post.is_published);
     blogDialog.showModal();
     blogForm.elements.title.focus();
+  }
+
+  function setTestimonialStatus(message, isError) {
+    testimonialStatus.textContent = message;
+    testimonialStatus.classList.toggle("error", Boolean(isError));
+  }
+
+  function renderTestimonials() {
+    testimonialList.replaceChildren();
+    testimonials.forEach(function (testimonial) {
+      var row = document.createElement("tr");
+      row.appendChild(createCell(testimonial.person_name, "blog-post-title"));
+      var text = testimonial.testimonial_text;
+      row.appendChild(createCell(text.length > 150 ? text.slice(0, 147) + "…" : text, "testimonial-excerpt"));
+
+      var statusCell = document.createElement("td");
+      var status = document.createElement("span");
+      status.className = "status-pill " + (testimonial.is_published ? "published-product" : "draft-post");
+      status.textContent = testimonial.is_published ? "Published" : "Draft";
+      statusCell.appendChild(status);
+      row.appendChild(statusCell);
+      row.appendChild(createCell(formatBlogDate(testimonial.updated_at), "product-category"));
+
+      var actionsCell = document.createElement("td");
+      var actions = document.createElement("div");
+      actions.className = "row-actions";
+      var editButton = document.createElement("button");
+      editButton.type = "button";
+      editButton.dataset.testimonialAction = "edit";
+      editButton.dataset.id = testimonial.id;
+      editButton.textContent = "Edit";
+      editButton.setAttribute("aria-label", "Edit testimonial by " + testimonial.person_name);
+      var deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className = "delete-button";
+      deleteButton.dataset.testimonialAction = "delete";
+      deleteButton.dataset.id = testimonial.id;
+      deleteButton.textContent = "Delete";
+      deleteButton.setAttribute("aria-label", "Delete testimonial by " + testimonial.person_name);
+      actions.appendChild(editButton);
+      actions.appendChild(deleteButton);
+      actionsCell.appendChild(actions);
+      row.appendChild(actionsCell);
+      testimonialList.appendChild(row);
+    });
+    testimonialEmptyState.hidden = testimonials.length > 0;
+  }
+
+  async function loadTestimonials() {
+    setTestimonialStatus("Loading testimonials...", false);
+    try {
+      var result = await client
+        .from("store_testimonials")
+        .select("id, person_name, testimonial_text, is_published, sort_order, created_at, updated_at")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+      if (result.error) {
+        throw result.error;
+      }
+      testimonials = result.data || [];
+      renderTestimonials();
+      setTestimonialStatus(testimonials.length
+        ? testimonials.length + (testimonials.length === 1 ? " testimonial loaded." : " testimonials loaded.")
+        : "No testimonials yet.", false);
+      return true;
+    } catch (error) {
+      console.error("Could not load testimonials.", error);
+      setTestimonialStatus("Could not load testimonials. " + (error.message || "Check your connection and try again."), true);
+      return false;
+    }
+  }
+
+  function openTestimonialDialog(testimonial) {
+    testimonialForm.reset();
+    testimonialFormError.textContent = "";
+    editingTestimonialId = testimonial ? testimonial.id : null;
+    document.getElementById("testimonial-dialog-title").textContent =
+      testimonial ? "Edit testimonial" : "Add a testimonial";
+    testimonialForm.elements.person_name.value = testimonial ? testimonial.person_name : "";
+    testimonialForm.elements.testimonial_text.value = testimonial ? testimonial.testimonial_text : "";
+    testimonialForm.elements.is_published.checked = testimonial ? Boolean(testimonial.is_published) : true;
+    testimonialDialog.showModal();
+    testimonialForm.elements.person_name.focus();
   }
 
   function normalizeSpecifications(value) {
@@ -437,7 +594,7 @@
     }
   }
 
-  function makeImagePath(file) {
+  function makeImagePath(file, folder) {
     var extensionByType = {
       "image/jpeg": "jpg",
       "image/png": "png",
@@ -447,7 +604,7 @@
     var randomId = window.crypto && typeof window.crypto.randomUUID === "function"
       ? window.crypto.randomUUID()
       : Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
-    return adminUserId + "/" + randomId + "." + extensionByType[file.type];
+    return adminUserId + "/" + (folder ? folder + "/" : "") + randomId + "." + extensionByType[file.type];
   }
 
   async function uploadSelectedImages(uploadedUrls) {
@@ -466,6 +623,29 @@
       }
       var publicUrlResult = client.storage.from(imageBucket).getPublicUrl(path);
       uploadedUrls.push(publicUrlResult.data.publicUrl);
+    }
+  }
+
+  async function uploadSelectedOfferImages(imageUrls, uploadedUrls) {
+    for (var index = 0; index < selectedOfferImageFiles.length; index += 1) {
+      var file = selectedOfferImageFiles[index];
+      if (!file) {
+        continue;
+      }
+      if (!adminUserId) {
+        throw new Error("Your admin session expired. Sign in again before uploading offer images.");
+      }
+      var path = makeImagePath(file, "offers/" + (index + 1));
+      var uploadResult = await client.storage.from(imageBucket).upload(path, file, {
+        contentType: file.type,
+        upsert: false
+      });
+      if (uploadResult.error) {
+        throw uploadResult.error;
+      }
+      var publicUrlResult = client.storage.from(imageBucket).getPublicUrl(path);
+      imageUrls[index] = publicUrlResult.data.publicUrl;
+      uploadedUrls.push(imageUrls[index]);
     }
   }
 
@@ -655,7 +835,7 @@
     }
     adminUserId = user.id;
     showAdmin();
-    await Promise.all([loadProducts(), loadAnnouncement(), loadPromotions(), loadBlogPosts()]);
+    await Promise.all([loadProducts(), loadAnnouncement(), loadPromotions(), loadBlogPosts(), loadTestimonials()]);
   }
 
   function initializeSupabase() {
@@ -684,17 +864,28 @@
       if (event === "SIGNED_OUT") {
         products = [];
         blogPosts = [];
+        testimonials = [];
         adminUserId = null;
         announcementMessage.value = "";
         announcementActive.checked = false;
         offerInputs.forEach(function (input) {
           input.value = "";
         });
+        offerImageUrls = [null, null, null];
+        selectedOfferImageFiles.forEach(function (file, index) {
+          selectedOfferImageFiles[index] = null;
+          offerImageRemovalPending[index] = false;
+          offerImageInputs[index].value = "";
+          clearOfferImagePreviewUrl(index);
+          renderOfferImagePreview(index);
+        });
         updateAnnouncementCount();
         setAnnouncementStatus("", false);
         setPromotionStatus("", false);
         setBlogStatus("", false);
+        setTestimonialStatus("", false);
         renderBlogPosts();
+        renderTestimonials();
         clearSelectedImageFiles();
         render();
         showAuth("");
@@ -734,6 +925,42 @@
   categoryInput.addEventListener("change", function () {
     configureConditionOptions(conditionInput.value);
     configureSpecificationFields();
+  });
+
+  offerImageInputs.forEach(function (input, index) {
+    input.addEventListener("change", function () {
+      var file = input.files && input.files[0];
+      if (!file) {
+        return;
+      }
+      if (allowedImageTypes.indexOf(file.type) === -1) {
+        input.value = "";
+        setPromotionStatus("Choose a JPEG, PNG, WebP, or AVIF image for each offer.", true);
+        return;
+      }
+      if (file.size > maxImageSize) {
+        input.value = "";
+        setPromotionStatus("Each offer image must be 5 MB or smaller.", true);
+        return;
+      }
+      clearOfferImagePreviewUrl(index);
+      selectedOfferImageFiles[index] = file;
+      offerImageRemovalPending[index] = false;
+      offerImagePreviewUrls[index] = URL.createObjectURL(file);
+      renderOfferImagePreview(index);
+      setPromotionStatus("Offer image selected. Save offers to publish it.", false);
+    });
+
+    offerImageRemoveButtons[index].addEventListener("click", function () {
+      if (selectedOfferImageFiles[index]) {
+        selectedOfferImageFiles[index] = null;
+        offerImageInputs[index].value = "";
+        clearOfferImagePreviewUrl(index);
+      } else {
+        offerImageRemovalPending[index] = !offerImageRemovalPending[index];
+      }
+      renderOfferImagePreview(index);
+    });
   });
 
   announcementMessage.addEventListener("input", updateAnnouncementCount);
@@ -789,15 +1016,23 @@
       return;
     }
 
+    var imageUrls = offerImageUrls.map(function (url, index) {
+      return offerImageRemovalPending[index] ? null : url;
+    });
+    var uploadedImageUrls = [];
     promotionSaveButton.disabled = true;
-    setPromotionStatus("Saving offer percentages...", false);
+    setPromotionStatus("Saving offers...", false);
     try {
+      await uploadSelectedOfferImages(imageUrls, uploadedImageUrls);
       var result = await client
         .from("store_promotions")
         .update({
           offer_one_percent: percentages[0],
           offer_two_percent: percentages[1],
           offer_three_percent: percentages[2],
+          offer_one_image_url: imageUrls[0],
+          offer_two_image_url: imageUrls[1],
+          offer_three_image_url: imageUrls[2],
           updated_at: new Date().toISOString()
         })
         .eq("id", 1)
@@ -806,10 +1041,43 @@
       if (result.error) {
         throw result.error;
       }
-      setPromotionStatus("Offer percentages saved and updated on the homepage.", false);
+
+      var oldImageUrls = offerImageUrls.filter(function (url, index) {
+        return url && url !== imageUrls[index];
+      });
+      offerImageUrls = imageUrls;
+      selectedOfferImageFiles.forEach(function (file, index) {
+        selectedOfferImageFiles[index] = null;
+        offerImageRemovalPending[index] = false;
+        offerImageInputs[index].value = "";
+        clearOfferImagePreviewUrl(index);
+        renderOfferImagePreview(index);
+      });
+      if (oldImageUrls.length) {
+        try {
+          await removeStoredImages(oldImageUrls);
+        } catch (cleanupError) {
+          console.error("Offers were saved, but replaced offer images could not be removed.", cleanupError);
+          setPromotionStatus("Offers were saved, but an old image could not be removed from storage. " +
+            (cleanupError.message || "Contact support if storage cleanup is needed."), true);
+          return;
+        }
+      }
+      setPromotionStatus("Offers saved and updated on the homepage.", false);
     } catch (error) {
-      console.error("Could not save store offer percentages.", error);
-      setPromotionStatus("Could not save offer percentages. " + (error.message || "Check your connection and try again."), true);
+      console.error("Could not save store offers.", error);
+      var cleanupMessage = "";
+      if (uploadedImageUrls.length) {
+        try {
+          await removeStoredImages(uploadedImageUrls);
+        } catch (cleanupError) {
+          console.error("Could not remove images uploaded for an unsuccessful offer save.", cleanupError);
+          cleanupMessage = " Uploaded image cleanup also failed: " +
+            (cleanupError.message || "check the Storage bucket.");
+        }
+      }
+      setPromotionStatus("Could not save offers. " + (error.message || "Check your connection and try again.") +
+        cleanupMessage, true);
     } finally {
       promotionSaveButton.disabled = false;
     }
@@ -927,6 +1195,112 @@
     } finally {
       blogSaveButton.disabled = false;
       blogSaveButton.textContent = "Save post";
+    }
+  });
+
+  document.getElementById("add-testimonial-button").addEventListener("click", function () {
+    openTestimonialDialog(null);
+  });
+  document.getElementById("empty-add-testimonial-button").addEventListener("click", function () {
+    openTestimonialDialog(null);
+  });
+  document.getElementById("testimonial-close-button").addEventListener("click", function () {
+    testimonialDialog.close();
+  });
+  document.getElementById("testimonial-cancel-button").addEventListener("click", function () {
+    testimonialDialog.close();
+  });
+  testimonialList.addEventListener("click", async function (event) {
+    var button = event.target.closest("button[data-testimonial-action]");
+    if (!button) {
+      return;
+    }
+    var testimonial = testimonials.find(function (item) {
+      return item.id === button.dataset.id;
+    });
+    if (!testimonial) {
+      return;
+    }
+    if (button.dataset.testimonialAction === "edit") {
+      openTestimonialDialog(testimonial);
+      return;
+    }
+    if (!window.confirm("Delete the testimonial by " + testimonial.person_name + "? This cannot be undone.")) {
+      return;
+    }
+    button.disabled = true;
+    setTestimonialStatus("Deleting testimonial...", false);
+    try {
+      var result = await client
+        .from("store_testimonials")
+        .delete()
+        .eq("id", testimonial.id)
+        .select("id")
+        .single();
+      if (result.error) {
+        throw result.error;
+      }
+      if (await loadTestimonials()) {
+        setTestimonialStatus("Testimonial deleted.", false);
+      }
+    } catch (error) {
+      console.error("Could not delete testimonial.", error);
+      setTestimonialStatus("Could not delete testimonial. " + (error.message || "Check your connection and try again."), true);
+      button.disabled = false;
+    }
+  });
+  testimonialForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    testimonialFormError.textContent = "";
+    var personName = testimonialForm.elements.person_name.value.trim();
+    var testimonialText = testimonialForm.elements.testimonial_text.value.trim();
+    var isPublished = testimonialForm.elements.is_published.checked;
+    if (!personName || !testimonialText) {
+      testimonialFormError.textContent = "Enter the person's name and testimonial.";
+      return;
+    }
+
+    testimonialSaveButton.disabled = true;
+    testimonialSaveButton.textContent = "Saving...";
+    try {
+      var testimonialData = {
+        person_name: personName,
+        testimonial_text: testimonialText,
+        is_published: isPublished,
+        updated_at: new Date().toISOString()
+      };
+      var result;
+      if (editingTestimonialId) {
+        result = await client
+          .from("store_testimonials")
+          .update(testimonialData)
+          .eq("id", editingTestimonialId)
+          .select("id")
+          .single();
+      } else {
+        var nextSortOrder = testimonials.reduce(function (currentMax, item) {
+          return Math.max(currentMax, Number(item.sort_order) || 0);
+        }, 0) + 1;
+        testimonialData.sort_order = nextSortOrder;
+        result = await client.from("store_testimonials").insert(testimonialData).select("id").single();
+      }
+      if (result.error) {
+        throw result.error;
+      }
+      testimonialDialog.close();
+      if (await loadTestimonials()) {
+        setTestimonialStatus(isPublished
+          ? "Testimonial saved and published."
+          : "Testimonial saved as a draft.", false);
+      }
+    } catch (error) {
+      console.error("Could not save testimonial.", error);
+      testimonialFormError.textContent = "Could not save testimonial. " +
+        (error.message || "Check your connection and try again.");
+      setTestimonialStatus("Could not save testimonial.", true);
+    } finally {
+      testimonialSaveButton.disabled = false;
+      testimonialSaveButton.textContent = "Save testimonial";
     }
   });
 

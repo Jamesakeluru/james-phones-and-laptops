@@ -23,7 +23,7 @@
       }
       var result = await client
         .from("store_promotions")
-        .select("offer_one_percent, offer_two_percent, offer_three_percent")
+        .select("offer_one_percent, offer_two_percent, offer_three_percent, offer_one_image_url, offer_two_image_url, offer_three_image_url")
         .eq("id", 1)
         .single();
       if (result.error) {
@@ -34,6 +34,11 @@
         result.data.offer_two_percent,
         result.data.offer_three_percent
       ];
+      var imageUrls = [
+        result.data.offer_one_image_url,
+        result.data.offer_two_image_url,
+        result.data.offer_three_image_url
+      ];
       if (percentages.some(function (value) {
         return !Number.isInteger(value) || value < 1 || value > 100;
       })) {
@@ -42,6 +47,15 @@
       ["one", "two", "three"].forEach(function (position, index) {
         document.getElementById("offer-" + position + "-percent").textContent =
           "Up to " + percentages[index] + "% Off";
+        var image = document.getElementById("offer-" + position + "-image");
+        if (typeof imageUrls[index] === "string" && imageUrls[index].trim()) {
+          var defaultImageUrl = image.getAttribute("src");
+          image.addEventListener("error", function () {
+            image.src = defaultImageUrl;
+            console.error("Could not load the saved image for offer " + (index + 1) + ".");
+          }, { once: true });
+          image.src = imageUrls[index];
+        }
       });
       section.hidden = false;
     } catch (error) {
