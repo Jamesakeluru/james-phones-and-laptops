@@ -117,3 +117,117 @@
     max-width: 1170px;
   }
 }
+
+@media (max-width: 767px) {
+  .info_section .info_contact {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .info_section .info_contact a {
+    max-width: 100%;
+  }
+
+  .info_section .info_contact a span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .navbar-brand.site-brand {
+    max-width: calc(100vw - 92px);
+    gap: 8px;
+    padding: 6px 10px 6px 6px;
+  }
+
+  .navbar-brand.site-brand-text {
+    padding-left: 11px;
+  }
+
+  .navbar-brand.site-brand .site-brand-image {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+
+  .site-brand-copy strong {
+    font-size: 16px;
+  }
+
+  .site-brand-copy small {
+    font-size: 8px;
+    letter-spacing: .85px;
+  }
+
+  .slider_section {
+    min-height: 520px;
+    min-height: min(680px, max(520px, 82svh));
+  }
+
+  .slider_section .detail-box {
+    padding: 125px 0 64px;
+  }
+
+  .slider_section .detail-box h1 {
+    font-size: clamp(2.25rem, 10.5vw, 3.5rem);
+    line-height: 1.05;
+  }
+
+  .slider_section .detail-box p {
+    width: min(100%, 500px);
+    margin-top: 15px;
+  }
+
+  .slider_section .detail-box .slider-link {
+    min-height: 48px;
+    margin-top: 21px;
+  }
+
+  .repair-contact-inner {
+    gap: 11px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .repair-contact-copy {
+    gap: 4px 8px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .repair-contact-copy strong {
+    font-size: 14px;
+  }
+
+  .repair-contact-actions {
+    gap: 9px;
+  }
+
+  .repair-contact-button {
+    min-height: 44px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 360px) {
+  .navbar-brand.site-brand {
+    max-width: calc(100vw - 84px);
+  }
+
+  .site-brand-copy strong {
+    font-size: 15px;
+  }
+
+  .site-brand-copy small {
+    font-size: 7px;
+    letter-spacing: .7px;
+  }
+
+  .repair-contact-actions {
+    flex-direction: column;
+  }
+
+  .repair-contact-button {
+    width: 100%;
+  }
+}

@@ -3,7 +3,8 @@
 .managed_inventory_section {
   padding-top: 52px;
   padding-bottom: 32px;
-  background: #f7f8f6;
+  border-top: 1px solid #dfe8e3;
+  background: linear-gradient(180deg, #f1f5f2 0, #f7f8f6 180px);
 }
 
 .managed_inventory_section .heading_container {
@@ -62,7 +63,7 @@
 
 .managed-product-controls input {
   width: 100%;
-  min-height: 42px;
+  min-height: 46px;
   padding: 0 12px;
   border: 1px solid #dfe6e2;
   border-radius: 6px;
@@ -83,7 +84,7 @@
 }
 
 .managed-category-chip {
-  min-height: 34px;
+  min-height: 40px;
   padding: 0 12px;
   border: 1px solid #dfe6e2;
   border-radius: 999px;
@@ -126,10 +127,19 @@
   height: calc(100% - 25px);
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid #e8ece9;
-  border-radius: 9px;
+  border: 1px solid #dfe7e2;
+  border-radius: 12px;
   background: #ffffff;
-  box-shadow: 0 5px 16px rgba(27, 44, 36, .05);
+  box-shadow: 0 8px 22px rgba(27, 44, 36, .07);
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+@media (hover: hover) {
+  .managed-product-card .box:hover {
+    transform: translateY(-2px);
+    border-color: #c9d9d1;
+    box-shadow: 0 13px 28px rgba(27, 44, 36, .1);
+  }
 }
 
 .managed-product-card .box > a {
@@ -337,7 +347,7 @@
 }
 
 .managed-cart-add {
-  min-height: 38px;
+  min-height: 42px;
   margin: 0 15px 15px;
   border: 1px solid #b9d1c7;
   border-radius: 6px;
@@ -400,5 +410,9 @@
   .managed-product-card .img-box {
     height: 165px;
     flex-basis: 165px;
+  }
+
+  .managed-product-card .box {
+    border-radius: 10px;
   }
 }
