@@ -7,11 +7,12 @@
   var cartCount = document.getElementById("managed-cart-count");
   var productControls = document.getElementById("managed-product-controls");
   var productSearch = document.getElementById("managed-product-search");
-  var categoryFilter = document.getElementById("managed-category-filter");
+  var categoryList = document.getElementById("managed-category-list");
   var resultsCount = document.getElementById("managed-results-count");
   var noResults = document.getElementById("managed-no-results");
   var cartStorageKey = "james-phones-cart-v1";
   var products = [];
+  var selectedCategory = "";
 
   function showUnavailable() {
     section.hidden = false;
@@ -67,13 +68,49 @@
     return values.filter(Boolean).join(" ").toLocaleLowerCase();
   }
 
+  function renderCategoryFilters() {
+    var categories = [];
+    var knownCategories = {};
+    products.forEach(function (product) {
+      var category = String(product.category || "").trim();
+      var key = category.toLocaleLowerCase();
+      if (category && !knownCategories[key]) {
+        knownCategories[key] = true;
+        categories.push(category);
+      }
+    });
+    categories.sort(function (first, second) {
+      return first.localeCompare(second);
+    });
+
+    categoryList.textContent = "";
+    [{ label: "All", value: "" }].concat(categories.map(function (category) {
+      return { label: category, value: category };
+    })).forEach(function (item) {
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "managed-category-chip";
+      if (item.value.toLocaleLowerCase() === selectedCategory.toLocaleLowerCase()) {
+        button.classList.add("active");
+      }
+      button.textContent = item.label;
+      button.setAttribute("aria-pressed", String(item.value.toLocaleLowerCase() === selectedCategory.toLocaleLowerCase()));
+      button.addEventListener("click", function () {
+        selectedCategory = item.value;
+        renderCategoryFilters();
+        renderFilteredProducts();
+      });
+      categoryList.appendChild(button);
+    });
+  }
+
   function renderFilteredProducts() {
     var searchTerm = productSearch.value.trim().toLocaleLowerCase();
-    var selectedCategory = categoryFilter.value.toLocaleLowerCase();
+    var categoryTerm = selectedCategory.toLocaleLowerCase();
     var filteredProducts = products.filter(function (product) {
       var matchesSearch = !searchTerm || getSearchableText(product).indexOf(searchTerm) !== -1;
-      var matchesCategory = !selectedCategory ||
-        String(product.category || "").trim().toLocaleLowerCase() === selectedCategory;
+      var matchesCategory = !categoryTerm ||
+        String(product.category || "").trim().toLocaleLowerCase() === categoryTerm;
       return matchesSearch && matchesCategory;
     });
 
@@ -173,7 +210,8 @@
     }
   }
 
-  function addToCart(product, feedback) {
+  function addToCart(product, feedback, addButton) {
+    addButton.disabled = true;
     try {
       var cart = readCart();
       var cartItem = cart.find(function (item) {
@@ -208,7 +246,19 @@
       status.classList.remove("error");
       status.textContent = "Added " + product.name + " to your order. Review your order to send it on WhatsApp.";
       feedback.classList.remove("error");
-      feedback.textContent = product.name + " added to your order.";
+      var orderQuantity = cart.reduce(function (total, item) {
+        return total + item.quantity;
+      }, 0);
+      feedback.textContent = product.name + " added to your order. You now have " +
+        orderQuantity + (orderQuantity === 1 ? " item" : " items") +
+        ". Review your order above to continue.";
+      addButton.textContent = "Added to order";
+      addButton.classList.add("is-added");
+      window.setTimeout(function () {
+        addButton.disabled = false;
+        addButton.textContent = "Add another";
+        addButton.classList.remove("is-added");
+      }, 2200);
       return true;
     } catch (error) {
       console.error("Could not add the product to the saved order.", error);
@@ -216,6 +266,7 @@
       status.textContent = error.message || "Could not save your order. Check your browser storage settings.";
       feedback.classList.add("error");
       feedback.textContent = error.message || "Could not add this product to your order.";
+      addButton.disabled = false;
       return false;
     }
   }
@@ -383,7 +434,7 @@
     feedback.setAttribute("role", "status");
     feedback.setAttribute("aria-live", "polite");
     addButton.addEventListener("click", function () {
-      addToCart(product, feedback);
+      addToCart(product, feedback, addButton);
     });
     card.appendChild(addButton);
     card.appendChild(feedback);
@@ -425,8 +476,8 @@
 
       products = result.data;
       productSearch.addEventListener("input", renderFilteredProducts);
-      categoryFilter.addEventListener("change", renderFilteredProducts);
       productControls.hidden = false;
+      renderCategoryFilters();
       renderFilteredProducts();
       if (!status.classList.contains("error")) {
         status.textContent = "";
