@@ -1,0 +1,166 @@
+#managed-inventory[hidden] { display: none !important; }
+
+.managed_inventory_section {
+  padding-top: 52px;
+  padding-bottom: 32px;
+  background: #f7f8f6;
+}
+
+.managed_inventory_section .heading_container {
+  margin-bottom: 16px;
+}
+
+.managed-kicker {
+  margin: 0 0 7px;
+  color: #15745c;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+}
+
+.managed-status {
+  min-height: 18px;
+  margin: 8px 0 0;
+  color: #6d7772;
+  font-size: 13px;
+}
+
+.managed-status.error {
+  color: #a34848;
+}
+
+.managed-product-card .box {
+  height: calc(100% - 25px);
+  overflow: hidden;
+  border: 1px solid #e8ece9;
+  border-radius: 9px;
+  background: #ffffff;
+  box-shadow: 0 5px 16px rgba(27, 44, 36, .05);
+}
+
+.managed-product-card .box > a {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  text-decoration: none;
+}
+
+.managed-product-card .img-box {
+  position: relative;
+  height: 190px;
+  padding: 18px;
+  background: #f4f6f5;
+}
+
+.managed-product-card .img-box img {
+  max-width: 100%;
+  max-height: 154px;
+  object-fit: contain;
+}
+
+.managed-image-placeholder {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: #99a39e;
+  font-size: 12px;
+}
+
+.managed-product-card .detail-box {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 14px 15px 16px;
+}
+
+.managed-product-card .product-category {
+  margin: 0;
+  color: #15745c;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+}
+
+.managed-product-card .product-name {
+  margin: 0;
+  color: #17241f;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.managed-product-card .product-description {
+  margin: 0;
+  color: #69746e;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.managed-product-card .product-specs {
+  width: 100%;
+  margin: 0;
+  padding-left: 17px;
+  color: #65716a;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.managed-product-card .product-price {
+  margin: auto 0 0;
+  padding-top: 4px;
+  color: #65716a;
+  font-size: 12px;
+}
+
+.managed-product-card .product-price strong {
+  color: #17241f;
+  font-size: 17px;
+}
+
+.managed-product-card .product-stock {
+  margin: 0;
+  color: #15745c;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.managed-product-card .product-stock.out-of-stock {
+  color: #a34848;
+}
+
+.managed-product-card .product-cta {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  padding: 0 13px;
+  border-radius: 6px;
+  background: #15745c;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.managed-product-card .box > a:hover .product-cta {
+  background: #105e4a;
+}
+
+@media (max-width: 575px) {
+  .managed_inventory_section {
+    padding-top: 36px;
+    padding-bottom: 22px;
+  }
+
+  .managed-product-card .img-box {
+    height: 165px;
+  }
+
+  .managed-product-card .img-box img {
+    max-height: 130px;
+  }
+}
