@@ -36,13 +36,23 @@
     return cart;
   }
 
-  function getSpecifications(value) {
+  function getSpecificationEntries(value) {
     if (Array.isArray(value)) {
-      return value.map(String);
+      return value.map(function (line, index) {
+        var text = String(line);
+        var separator = text.indexOf(":");
+        return separator > 0
+          ? { label: text.slice(0, separator).trim(), value: text.slice(separator + 1).trim() }
+          : { label: "Details " + (index + 1), value: text };
+      }).filter(function (entry) {
+        return entry.label && entry.value;
+      });
     }
     if (value && typeof value === "object") {
       return Object.keys(value).map(function (key) {
-        return key + ": " + String(value[key]);
+        return { label: key, value: String(value[key] || "").trim() };
+      }).filter(function (entry) {
+        return entry.label && entry.value;
       });
     }
     return [];
@@ -153,14 +163,19 @@
         details.appendChild(description);
       }
 
-      var specifications = getSpecifications(product.specifications);
+      var specifications = getSpecificationEntries(product.specifications);
       if (specifications.length) {
-        var specList = document.createElement("ul");
+        var specList = document.createElement("dl");
         specList.className = "checkout-item-specs";
         specifications.forEach(function (specification) {
-          var spec = document.createElement("li");
-          spec.textContent = specification;
-          specList.appendChild(spec);
+          var row = document.createElement("div");
+          var label = document.createElement("dt");
+          label.textContent = specification.label;
+          var value = document.createElement("dd");
+          value.textContent = specification.value;
+          row.appendChild(label);
+          row.appendChild(value);
+          specList.appendChild(row);
         });
         details.appendChild(specList);
       }
@@ -258,11 +273,11 @@
           "Unit price: " + formatPrice(price, product.currency),
           "Subtotal: " + formatPrice(subtotal, product.currency)
         );
-        var specifications = getSpecifications(product.specifications);
+        var specifications = getSpecificationEntries(product.specifications);
         if (specifications.length) {
           lines.push("Specifications:");
           specifications.forEach(function (specification) {
-            lines.push("- " + specification);
+            lines.push("- " + specification.label + ": " + specification.value);
           });
         }
       });
