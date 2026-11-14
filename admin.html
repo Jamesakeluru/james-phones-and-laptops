@@ -125,10 +125,11 @@
               <tr>
                 <th scope="col">Product</th>
                 <th scope="col">Category</th>
+                <th scope="col">Condition</th>
                 <th scope="col">Price</th>
                 <th scope="col">Stock</th>
                 <th scope="col">Specifications</th>
-                <th scope="col">Status</th>
+                <th scope="col">Catalog</th>
                 <th scope="col"><span class="visually-hidden">Actions</span></th>
               </tr>
             </thead>
@@ -164,8 +165,21 @@
         <option value="Accessory">Accessory</option>
         <option value="Other">Other</option>
       </select>
+      <label for="product-condition">Condition</label>
+      <select id="product-condition" name="product_condition" required>
+        <option value="">Choose condition</option>
+        <option value="Brand New">Brand New</option>
+        <option value="UK Used">UK Used</option>
+        <option value="Fairly Used">Fairly Used</option>
+      </select>
+      <p class="field-hint condition-hint" id="condition-hint">Choose the condition shown to customers.</p>
+      <label for="product-description">Short description <span class="field-hint">(Optional)</span></label>
+      <textarea id="product-description" name="description" rows="3" maxlength="500" placeholder="A short overview for the product card"></textarea>
       <label for="product-specifications">Specifications <span class="field-hint">(Name: value, one per line)</span></label>
-      <textarea id="product-specifications" name="specifications" rows="4" maxlength="1200" placeholder="Storage: 128GB&#10;Condition: UK used&#10;Battery health: 88%"></textarea>
+      <textarea id="product-specifications" name="specifications" rows="4" maxlength="1200" placeholder="Storage: 128GB&#10;Battery health: 88%"></textarea>
+      <label for="product-images">Product photos <span class="field-hint">(Up to 4, 5 MB each)</span></label>
+      <input id="product-images" name="images" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple />
+      <div class="image-preview-list" id="image-preview-list" aria-live="polite"></div>
       <div class="form-row">
         <div>
           <label for="product-price">Price (GH₵)</label>
@@ -176,6 +190,10 @@
           <input id="product-stock" name="stock" type="number" min="0" step="1" placeholder="0" required />
         </div>
       </div>
+      <label class="catalog-toggle" for="product-active">
+        <input id="product-active" name="active" type="checkbox" checked />
+        <span>Show this product in the public catalog</span>
+      </label>
       <p class="form-error" id="form-error" role="alert"></p>
       <div class="dialog-actions">
         <button class="secondary-button" id="cancel-dialog-button" type="button">Cancel</button>

@@ -1,7 +1,15 @@
-# James-Phones
+# James Phones
 
-## Live inventory
+## Storefront and inventory
 
-The storefront reads active products from Supabase and keeps the existing static catalog available as a fallback. The admin page requires a Supabase Auth user listed in `public.admin_users`; database access remains protected by the project's existing row-level security policies.
+The storefront reads active products from Supabase. The admin page at `admin.html` requires a Supabase Auth account that is authorized in `public.admin_users`; product changes are protected by the database's row-level security policies.
 
-The browser uses the project's public publishable key from `js/supabase-config.js`. Never put a Supabase secret or service-role key in this repository. `supabase/schema.sql` adds the nullable stock field used by the admin inventory; existing products keep stock unset until an admin enters it.
+Admins can create, edit, publish, hide, and delete products; manage prices, stock, descriptions, specifications, and up to four photos; and set phone condition to Brand New, UK Used, or Fairly Used. Laptops are listed as Fairly Used. Product photos are stored in the Supabase `product-images` bucket.
+
+## Orders
+
+Customers can add live products to an order and send product details, specifications, and an optional contact number to WhatsApp. The site does not collect online payments. Older catalog listings also open a WhatsApp inquiry.
+
+## Configuration and security
+
+The browser uses the Supabase project URL and public publishable key from `js/supabase-config.js`. Never put a Supabase secret or service-role key in the frontend repository. Database schema, row-level security, authentication, and Storage policies are configured in the Supabase project; this repository contains the static frontend only.
