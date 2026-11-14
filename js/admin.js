@@ -255,7 +255,7 @@
       showAuthError(authorization.error);
       return;
     }
-    if (authorization.data !== true) {
+    if (!authorization.data) {
       try {
         var signOutResult = await client.auth.signOut();
         if (signOutResult.error) {
