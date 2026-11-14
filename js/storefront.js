@@ -374,7 +374,11 @@
     }
 
     try {
-      var client = window.supabase.createClient(config.url, config.anonKey);
+      var client = window.JAMES_PHONES_PUBLIC_CLIENT;
+      if (!client) {
+        client = window.supabase.createClient(config.url, config.anonKey);
+        window.JAMES_PHONES_PUBLIC_CLIENT = client;
+      }
       updateCartCount();
       var result = await client
         .from("products")
