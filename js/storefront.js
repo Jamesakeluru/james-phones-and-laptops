@@ -5,7 +5,13 @@
   var productsContainer = document.getElementById("managed-products");
   var status = document.getElementById("managed-status");
   var cartCount = document.getElementById("managed-cart-count");
+  var productControls = document.getElementById("managed-product-controls");
+  var productSearch = document.getElementById("managed-product-search");
+  var categoryFilter = document.getElementById("managed-category-filter");
+  var resultsCount = document.getElementById("managed-results-count");
+  var noResults = document.getElementById("managed-no-results");
   var cartStorageKey = "james-phones-cart-v1";
+  var products = [];
 
   function showUnavailable() {
     section.hidden = false;
@@ -46,6 +52,37 @@
       row.appendChild(value);
       list.appendChild(row);
     });
+  }
+
+  function getSearchableText(product) {
+    var values = [
+      product.name,
+      product.category,
+      product.description,
+      product.product_condition
+    ];
+    getSpecificationEntries(product.specifications).forEach(function (specification) {
+      values.push(specification.label, specification.value);
+    });
+    return values.filter(Boolean).join(" ").toLocaleLowerCase();
+  }
+
+  function renderFilteredProducts() {
+    var searchTerm = productSearch.value.trim().toLocaleLowerCase();
+    var selectedCategory = categoryFilter.value.toLocaleLowerCase();
+    var filteredProducts = products.filter(function (product) {
+      var matchesSearch = !searchTerm || getSearchableText(product).indexOf(searchTerm) !== -1;
+      var matchesCategory = !selectedCategory ||
+        String(product.category || "").trim().toLocaleLowerCase() === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+
+    productsContainer.textContent = "";
+    filteredProducts.forEach(function (product) {
+      productsContainer.appendChild(createProductCard(product));
+    });
+    resultsCount.textContent = "Showing " + filteredProducts.length + " of " + products.length + " products";
+    noResults.hidden = filteredProducts.length !== 0;
   }
 
   function safeImageUrl(value) {
@@ -386,9 +423,11 @@
         return;
       }
 
-      result.data.forEach(function (product) {
-        productsContainer.appendChild(createProductCard(product));
-      });
+      products = result.data;
+      productSearch.addEventListener("input", renderFilteredProducts);
+      categoryFilter.addEventListener("change", renderFilteredProducts);
+      productControls.hidden = false;
+      renderFilteredProducts();
       if (!status.classList.contains("error")) {
         status.textContent = "";
       }
