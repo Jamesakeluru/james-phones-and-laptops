@@ -32,7 +32,6 @@
   <header class="header_section innerpage_header">
     <div class="store-announcement" id="store-announcement" role="region" aria-label="Store announcement" aria-live="polite" hidden>
       <div class="store-announcement-inner">
-        <span class="store-announcement-label">ANNOUNCEMENT</span>
         <p class="store-announcement-message" id="store-announcement-message"></p>
       </div>
     </div>
@@ -70,59 +69,13 @@
 
   <!-- blog section -->
 
-  <section class="blog_section ">
+  <section class="blog_section">
     <div class="container">
       <div class="heading_container">
-        <h2>
-          Latest From Blog
-        </h2>
+        <h2>Latest From Blog</h2>
       </div>
-      <div class="row">
-        <div class="col-md-6">
-          <div class="box">
-            <div class="img-box">
-              <img src="fb.webp" alt="">
-              <h4 class="blog_date">
-                4 <br>
-                December
-              </h4>
-            </div>
-            <div class="detail-box">
-              <h5>
-                The Best iPhone in 2024: Which Apple Smartphone Is Right for You?
-              </h5>
-              <p>
-                This article offers a comprehensive buying guide for Apple's current lineup, including the iPhone 16 series and budget-friendly options like the iPhone 14. It covers performance, features, and camera advancements, making it ideal for potential buyers seeking advice.
-              </p>
-              <a href="https://www.businessinsider.com/guides/tech/best-iphone?r=US&IR=T">
-                Read More
-              </a>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="box">
-            <div class="img-box">
-              <img src="fb2.webp" alt="">
-              <h4 class="blog_date">
-                17 <br>
-                November
-              </h4>
-            </div>
-            <div class="detail-box">
-              <h5>
-                Why iOS 18 and iPhone 16 Pro Max Redefine Smartphone Excellence
-              </h5>
-              <p>
-                This blog delves into the key updates in iOS 18, paired with the iPhone 16 Pro Max. It highlights AI-powered tools, camera improvements, and long-term performance benchmarks. These insights can help customers understand why upgrading to the latest models is worth it.
-              </p>
-              <a href="https://bgr.com/tech/these-are-my-favorite-new-iphone-features-of-2024/">
-                Read More
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
+      <p class="blog-status" id="blog-status" role="status" aria-live="polite"></p>
+      <div class="row" id="blog-posts"></div>
     </div>
   </section>
 
@@ -256,6 +209,7 @@
   <script src="js/supabase-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/announcement.js"></script>
+  <script src="js/blog.js"></script>
 
 </body>
 

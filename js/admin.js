@@ -2,7 +2,9 @@
   "use strict";
 
   var products = [];
+  var blogPosts = [];
   var editingId = null;
+  var editingBlogId = null;
   var client = null;
   var adminUserId = null;
   var retainedImageUrls = [];
@@ -32,6 +34,21 @@
   var announcementCount = document.getElementById("announcement-count");
   var announcementStatus = document.getElementById("announcement-status");
   var announcementSaveButton = document.getElementById("announcement-save-button");
+  var promotionForm = document.getElementById("promotion-form");
+  var promotionStatus = document.getElementById("promotion-status");
+  var promotionSaveButton = document.getElementById("promotion-save-button");
+  var offerInputs = [
+    document.getElementById("offer-one-percent"),
+    document.getElementById("offer-two-percent"),
+    document.getElementById("offer-three-percent")
+  ];
+  var blogList = document.getElementById("blog-post-list");
+  var blogEmptyState = document.getElementById("blog-empty-state");
+  var blogStatus = document.getElementById("blog-admin-status");
+  var blogDialog = document.getElementById("blog-dialog");
+  var blogForm = document.getElementById("blog-form");
+  var blogFormError = document.getElementById("blog-form-error");
+  var blogSaveButton = document.getElementById("blog-save-button");
   var specificationGroups = Array.prototype.slice.call(document.querySelectorAll(".specification-group"));
 
   var imageBucket = "product-images";
@@ -123,6 +140,134 @@
       setAnnouncementStatus("Could not load announcement settings. " + (error.message || "Check your connection and try again."), true);
       return false;
     }
+  }
+
+  function setPromotionStatus(message, isError) {
+    promotionStatus.textContent = message;
+    promotionStatus.classList.toggle("error", Boolean(isError));
+  }
+
+  async function loadPromotions() {
+    setPromotionStatus("Loading offer percentages...", false);
+    try {
+      var result = await client
+        .from("store_promotions")
+        .select("offer_one_percent, offer_two_percent, offer_three_percent")
+        .eq("id", 1)
+        .single();
+      if (result.error) {
+        throw result.error;
+      }
+      [
+        result.data.offer_one_percent,
+        result.data.offer_two_percent,
+        result.data.offer_three_percent
+      ].forEach(function (value, index) {
+        offerInputs[index].value = String(value);
+      });
+      setPromotionStatus("Offer percentages loaded.", false);
+      return true;
+    } catch (error) {
+      console.error("Could not load store offer percentages.", error);
+      setPromotionStatus("Could not load offer percentages. " + (error.message || "Check your connection and try again."), true);
+      return false;
+    }
+  }
+
+  function setBlogStatus(message, isError) {
+    blogStatus.textContent = message;
+    blogStatus.classList.toggle("error", Boolean(isError));
+  }
+
+  function formatBlogDate(value) {
+    if (!value) {
+      return "—";
+    }
+    var date = new Date(value);
+    return Number.isFinite(date.getTime())
+      ? date.toLocaleDateString("en-GH", { year: "numeric", month: "short", day: "numeric" })
+      : "—";
+  }
+
+  function renderBlogPosts() {
+    blogList.replaceChildren();
+    blogPosts.forEach(function (post) {
+      var row = document.createElement("tr");
+      var titleCell = document.createElement("td");
+      var title = document.createElement("span");
+      title.className = "blog-post-title";
+      title.textContent = post.title;
+      titleCell.appendChild(title);
+      row.appendChild(titleCell);
+
+      var statusCell = document.createElement("td");
+      var status = document.createElement("span");
+      status.className = "status-pill " + (post.is_published ? "published-product" : "draft-post");
+      status.textContent = post.is_published ? "Published" : "Draft";
+      statusCell.appendChild(status);
+      row.appendChild(statusCell);
+      row.appendChild(createCell(formatBlogDate(post.updated_at), "product-category"));
+
+      var actionsCell = document.createElement("td");
+      var actions = document.createElement("div");
+      actions.className = "row-actions";
+      var editButton = document.createElement("button");
+      editButton.type = "button";
+      editButton.dataset.blogAction = "edit";
+      editButton.dataset.id = post.id;
+      editButton.textContent = "Edit";
+      editButton.setAttribute("aria-label", "Edit blog post " + post.title);
+      var deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className = "delete-button";
+      deleteButton.dataset.blogAction = "delete";
+      deleteButton.dataset.id = post.id;
+      deleteButton.textContent = "Delete";
+      deleteButton.setAttribute("aria-label", "Delete blog post " + post.title);
+      actions.appendChild(editButton);
+      actions.appendChild(deleteButton);
+      actionsCell.appendChild(actions);
+      row.appendChild(actionsCell);
+      blogList.appendChild(row);
+    });
+    blogEmptyState.hidden = blogPosts.length > 0;
+  }
+
+  async function loadBlogPosts() {
+    setBlogStatus("Loading blog posts...", false);
+    try {
+      var result = await client
+        .from("store_blog_posts")
+        .select("id, title, summary, content, image_url, is_published, published_at, created_at, updated_at")
+        .order("updated_at", { ascending: false });
+      if (result.error) {
+        throw result.error;
+      }
+      blogPosts = result.data || [];
+      renderBlogPosts();
+      setBlogStatus(blogPosts.length
+        ? blogPosts.length + (blogPosts.length === 1 ? " post loaded." : " posts loaded.")
+        : "No blog posts yet.", false);
+      return true;
+    } catch (error) {
+      console.error("Could not load blog posts.", error);
+      setBlogStatus("Could not load blog posts. " + (error.message || "Check your connection and try again."), true);
+      return false;
+    }
+  }
+
+  function openBlogDialog(post) {
+    blogForm.reset();
+    blogFormError.textContent = "";
+    editingBlogId = post ? post.id : null;
+    document.getElementById("blog-dialog-title").textContent = post ? "Edit blog post" : "Add a blog post";
+    blogForm.elements.title.value = post ? post.title : "";
+    blogForm.elements.summary.value = post ? post.summary : "";
+    blogForm.elements.content.value = post ? post.content : "";
+    blogForm.elements.image_url.value = post ? (post.image_url || "") : "";
+    blogForm.elements.is_published.checked = Boolean(post && post.is_published);
+    blogDialog.showModal();
+    blogForm.elements.title.focus();
   }
 
   function normalizeSpecifications(value) {
@@ -510,7 +655,7 @@
     }
     adminUserId = user.id;
     showAdmin();
-    await Promise.all([loadProducts(), loadAnnouncement()]);
+    await Promise.all([loadProducts(), loadAnnouncement(), loadPromotions(), loadBlogPosts()]);
   }
 
   function initializeSupabase() {
@@ -538,11 +683,18 @@
     client.auth.onAuthStateChange(function (event, session) {
       if (event === "SIGNED_OUT") {
         products = [];
+        blogPosts = [];
         adminUserId = null;
         announcementMessage.value = "";
         announcementActive.checked = false;
+        offerInputs.forEach(function (input) {
+          input.value = "";
+        });
         updateAnnouncementCount();
         setAnnouncementStatus("", false);
+        setPromotionStatus("", false);
+        setBlogStatus("", false);
+        renderBlogPosts();
         clearSelectedImageFiles();
         render();
         showAuth("");
@@ -619,6 +771,162 @@
       setAnnouncementStatus("Could not save announcement. " + (error.message || "Check your connection and try again."), true);
     } finally {
       announcementSaveButton.disabled = false;
+    }
+  });
+
+  promotionForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    var percentages = offerInputs.map(function (input) {
+      return Number(input.value);
+    });
+    if (percentages.some(function (value) {
+      return !Number.isInteger(value) || value < 1 || value > 100;
+    })) {
+      setPromotionStatus("Enter a whole-number percentage from 1 to 100 for each offer.", true);
+      offerInputs.find(function (input, index) {
+        return !Number.isInteger(percentages[index]) || percentages[index] < 1 || percentages[index] > 100;
+      }).focus();
+      return;
+    }
+
+    promotionSaveButton.disabled = true;
+    setPromotionStatus("Saving offer percentages...", false);
+    try {
+      var result = await client
+        .from("store_promotions")
+        .update({
+          offer_one_percent: percentages[0],
+          offer_two_percent: percentages[1],
+          offer_three_percent: percentages[2],
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", 1)
+        .select("id")
+        .single();
+      if (result.error) {
+        throw result.error;
+      }
+      setPromotionStatus("Offer percentages saved and updated on the homepage.", false);
+    } catch (error) {
+      console.error("Could not save store offer percentages.", error);
+      setPromotionStatus("Could not save offer percentages. " + (error.message || "Check your connection and try again."), true);
+    } finally {
+      promotionSaveButton.disabled = false;
+    }
+  });
+
+  document.getElementById("add-blog-post-button").addEventListener("click", function () {
+    openBlogDialog(null);
+  });
+  document.getElementById("empty-add-blog-button").addEventListener("click", function () {
+    openBlogDialog(null);
+  });
+  document.getElementById("blog-close-button").addEventListener("click", function () {
+    blogDialog.close();
+  });
+  document.getElementById("blog-cancel-button").addEventListener("click", function () {
+    blogDialog.close();
+  });
+  blogList.addEventListener("click", async function (event) {
+    var button = event.target.closest("button[data-blog-action]");
+    if (!button) {
+      return;
+    }
+    var post = blogPosts.find(function (item) {
+      return item.id === button.dataset.id;
+    });
+    if (!post) {
+      return;
+    }
+    if (button.dataset.blogAction === "edit") {
+      openBlogDialog(post);
+      return;
+    }
+    if (!window.confirm("Delete \"" + post.title + "\"? This cannot be undone.")) {
+      return;
+    }
+    button.disabled = true;
+    setBlogStatus("Deleting blog post...", false);
+    try {
+      var result = await client
+        .from("store_blog_posts")
+        .delete()
+        .eq("id", post.id)
+        .select("id")
+        .single();
+      if (result.error) {
+        throw result.error;
+      }
+      if (await loadBlogPosts()) {
+        setBlogStatus("Blog post deleted.", false);
+      }
+    } catch (error) {
+      console.error("Could not delete blog post.", error);
+      setBlogStatus("Could not delete blog post. " + (error.message || "Check your connection and try again."), true);
+      button.disabled = false;
+    }
+  });
+  blogForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    blogFormError.textContent = "";
+    var title = blogForm.elements.title.value.trim();
+    var summary = blogForm.elements.summary.value.trim();
+    var content = blogForm.elements.content.value.trim();
+    var imageUrl = blogForm.elements.image_url.value.trim();
+    var isPublished = blogForm.elements.is_published.checked;
+    if (!title || !summary || !content) {
+      blogFormError.textContent = "Enter a title, short summary, and article.";
+      return;
+    }
+    if (imageUrl) {
+      try {
+        var parsedImageUrl = new URL(imageUrl, window.location.href);
+        if (parsedImageUrl.protocol !== "https:" &&
+            !(parsedImageUrl.origin === window.location.origin &&
+              parsedImageUrl.protocol === window.location.protocol)) {
+          throw new Error("Use an HTTPS image URL.");
+        }
+      } catch (error) {
+        blogFormError.textContent = error.message || "Enter a valid image URL.";
+        return;
+      }
+    }
+
+    blogSaveButton.disabled = true;
+    blogSaveButton.textContent = "Saving...";
+    try {
+      var existingPost = editingBlogId && blogPosts.find(function (post) {
+        return post.id === editingBlogId;
+      });
+      var now = new Date().toISOString();
+      var postData = {
+        title: title,
+        summary: summary,
+        content: content,
+        image_url: imageUrl,
+        is_published: isPublished,
+        published_at: isPublished
+          ? (existingPost && existingPost.published_at ? existingPost.published_at : now)
+          : null,
+        updated_at: now
+      };
+      var result = editingBlogId
+        ? await client.from("store_blog_posts").update(postData).eq("id", editingBlogId).select("id").single()
+        : await client.from("store_blog_posts").insert(postData).select("id").single();
+      if (result.error) {
+        throw result.error;
+      }
+      blogDialog.close();
+      if (await loadBlogPosts()) {
+        setBlogStatus(isPublished ? "Blog post saved and published." : "Blog post saved as a draft.", false);
+      }
+    } catch (error) {
+      console.error("Could not save blog post.", error);
+      blogFormError.textContent = "Could not save blog post. " + (error.message || "Check your connection and try again.");
+      setBlogStatus("Could not save blog post.", true);
+    } finally {
+      blogSaveButton.disabled = false;
+      blogSaveButton.textContent = "Save post";
     }
   });
 
