@@ -104,11 +104,34 @@
 }
 
 .checkout-item-specs {
-  margin: 8px 0 0;
-  padding-left: 18px;
-  color: #69746e;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin: 10px 0 0;
   font-size: 11px;
-  line-height: 1.5;
+}
+
+.checkout-item-specs > div {
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid #edf0ee;
+  border-radius: 6px;
+  background: #fbfcfb;
+}
+
+.checkout-item-specs dt {
+  color: #89938e;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.checkout-item-specs dd {
+  margin: 3px 0 0;
+  color: #27342e;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .checkout-item-footer {
