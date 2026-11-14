@@ -46,6 +46,12 @@
         <a class="nav-link" href="#announcement">
           <span class="nav-icon" aria-hidden="true">▰</span> Announcement
         </a>
+        <a class="nav-link" href="#promotions">
+          <span class="nav-icon" aria-hidden="true">%</span> Offers
+        </a>
+        <a class="nav-link" href="#blog-management">
+          <span class="nav-icon" aria-hidden="true">▧</span> Blog
+        </a>
         <a class="nav-link" href="index.html">
           <span class="nav-icon" aria-hidden="true">↗</span> View storefront
         </a>
@@ -98,6 +104,60 @@
           <p class="announcement-status" id="announcement-status" role="status" aria-live="polite"></p>
           <button class="primary-button" id="announcement-save-button" type="submit">Save announcement</button>
         </form>
+      </section>
+
+      <section class="announcement-panel" id="promotions" aria-labelledby="promotion-title">
+        <div class="panel-heading">
+          <div>
+            <h2 id="promotion-title">Offer percentages</h2>
+            <p>Control the three “Up to …% Off” banners shown on the homepage. These labels do not change product prices.</p>
+          </div>
+        </div>
+        <form class="promotion-form" id="promotion-form">
+          <div class="promotion-fields">
+            <label for="offer-one-percent">First offer (% off)
+              <input id="offer-one-percent" name="offer_one_percent" type="number" min="1" max="100" step="1" required />
+            </label>
+            <label for="offer-two-percent">Second offer (% off)
+              <input id="offer-two-percent" name="offer_two_percent" type="number" min="1" max="100" step="1" required />
+            </label>
+            <label for="offer-three-percent">Third offer (% off)
+              <input id="offer-three-percent" name="offer_three_percent" type="number" min="1" max="100" step="1" required />
+            </label>
+          </div>
+          <p class="announcement-status" id="promotion-status" role="status" aria-live="polite"></p>
+          <button class="primary-button" id="promotion-save-button" type="submit">Save offer percentages</button>
+        </form>
+      </section>
+
+      <section class="inventory-panel blog-admin-panel" id="blog-management" aria-labelledby="blog-management-title">
+        <div class="panel-heading">
+          <div>
+            <h2 id="blog-management-title">Blog posts</h2>
+            <p>Create, edit, publish, and remove posts shown on the storefront.</p>
+          </div>
+          <button class="primary-button" id="add-blog-post-button" type="button">Add post</button>
+        </div>
+        <p class="blog-admin-status" id="blog-admin-status" role="status" aria-live="polite">Loading blog posts...</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Post</th>
+                <th scope="col">Status</th>
+                <th scope="col">Last updated</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody id="blog-post-list"></tbody>
+          </table>
+          <div class="empty-state" id="blog-empty-state" hidden>
+            <span class="empty-icon" aria-hidden="true">▧</span>
+            <h3>No blog posts yet</h3>
+            <p>Create a post to publish it on the storefront.</p>
+            <button class="secondary-button" id="empty-add-blog-button" type="button">Add a post</button>
+          </div>
+        </div>
       </section>
 
       <section class="summary-grid" aria-label="Inventory summary">
@@ -275,6 +335,34 @@
       <div class="dialog-actions">
         <button class="secondary-button" id="cancel-dialog-button" type="button">Cancel</button>
         <button class="primary-button" type="submit">Save product</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog class="product-dialog blog-dialog" id="blog-dialog" aria-labelledby="blog-dialog-title">
+    <form id="blog-form">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow">STOREFRONT CONTENT</p>
+          <h2 id="blog-dialog-title">Add a blog post</h2>
+        </div>
+        <button class="close-button" id="blog-close-button" type="button" aria-label="Close dialog">×</button>
+      </div>
+      <label for="blog-title">Title</label>
+      <input id="blog-title" name="title" type="text" maxlength="160" required />
+      <label for="blog-summary">Short summary</label>
+      <textarea id="blog-summary" name="summary" rows="3" maxlength="500" required></textarea>
+      <label for="blog-content">Article</label>
+      <textarea id="blog-content" name="content" rows="10" maxlength="20000" required></textarea>
+      <label for="blog-image-url">Image URL <span class="field-hint">(Optional, HTTPS)</span></label>
+      <input id="blog-image-url" name="image_url" type="url" maxlength="2048" placeholder="https://..." />
+      <label class="catalog-toggle" for="blog-published">
+        <input id="blog-published" name="is_published" type="checkbox" />
+        <span>Publish this post on the storefront</span>
+      </label>
+      <p class="form-error" id="blog-form-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button class="secondary-button" id="blog-cancel-button" type="button">Cancel</button>
+        <button class="primary-button" id="blog-save-button" type="submit">Save post</button>
       </div>
     </form>
   </dialog>
