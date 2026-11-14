@@ -26,6 +26,12 @@
   var conditionHint = document.getElementById("condition-hint");
   var imageInput = document.getElementById("product-images");
   var imagePreviewList = document.getElementById("image-preview-list");
+  var announcementForm = document.getElementById("announcement-form");
+  var announcementMessage = document.getElementById("announcement-message");
+  var announcementActive = document.getElementById("announcement-active");
+  var announcementCount = document.getElementById("announcement-count");
+  var announcementStatus = document.getElementById("announcement-status");
+  var announcementSaveButton = document.getElementById("announcement-save-button");
   var specificationGroups = Array.prototype.slice.call(document.querySelectorAll(".specification-group"));
 
   var imageBucket = "product-images";
@@ -81,6 +87,40 @@
       return true;
     } catch (error) {
       reportError(error, "Could not load inventory.");
+      return false;
+    }
+  }
+
+  function setAnnouncementStatus(message, isError) {
+    announcementStatus.textContent = message;
+    announcementStatus.classList.toggle("error", Boolean(isError));
+  }
+
+  function updateAnnouncementCount() {
+    announcementCount.textContent = announcementMessage.value.length + " / 280 characters";
+  }
+
+  async function loadAnnouncement() {
+    setAnnouncementStatus("Loading announcement settings...", false);
+    try {
+      var result = await client
+        .from("store_announcement")
+        .select("message, is_active")
+        .eq("id", 1)
+        .single();
+      if (result.error) {
+        setAnnouncementStatus("Could not load announcement settings. " + result.error.message, true);
+        console.error("Could not load announcement settings.", result.error);
+        return false;
+      }
+      announcementMessage.value = result.data.message || "";
+      announcementActive.checked = Boolean(result.data.is_active);
+      updateAnnouncementCount();
+      setAnnouncementStatus("Announcement settings loaded.", false);
+      return true;
+    } catch (error) {
+      console.error("Could not load announcement settings.", error);
+      setAnnouncementStatus("Could not load announcement settings. " + (error.message || "Check your connection and try again."), true);
       return false;
     }
   }
@@ -470,7 +510,7 @@
     }
     adminUserId = user.id;
     showAdmin();
-    await loadProducts();
+    await Promise.all([loadProducts(), loadAnnouncement()]);
   }
 
   function initializeSupabase() {
@@ -499,6 +539,10 @@
       if (event === "SIGNED_OUT") {
         products = [];
         adminUserId = null;
+        announcementMessage.value = "";
+        announcementActive.checked = false;
+        updateAnnouncementCount();
+        setAnnouncementStatus("", false);
         clearSelectedImageFiles();
         render();
         showAuth("");
@@ -538,6 +582,44 @@
   categoryInput.addEventListener("change", function () {
     configureConditionOptions(conditionInput.value);
     configureSpecificationFields();
+  });
+
+  announcementMessage.addEventListener("input", updateAnnouncementCount);
+  announcementForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    var message = announcementMessage.value.trim();
+    var isActive = announcementActive.checked;
+    if (isActive && !message) {
+      setAnnouncementStatus("Enter announcement text or turn off the storefront display.", true);
+      announcementMessage.focus();
+      return;
+    }
+
+    announcementSaveButton.disabled = true;
+    setAnnouncementStatus("Saving announcement...", false);
+    try {
+      var result = await client
+        .from("store_announcement")
+        .update({
+          message: message,
+          is_active: isActive,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", 1)
+        .select("id")
+        .single();
+      if (result.error) {
+        throw result.error;
+      }
+      announcementMessage.value = message;
+      updateAnnouncementCount();
+      setAnnouncementStatus(isActive ? "Announcement saved and displayed on the storefront." : "Announcement saved and hidden from the storefront.", false);
+    } catch (error) {
+      console.error("Could not save announcement.", error);
+      setAnnouncementStatus("Could not save announcement. " + (error.message || "Check your connection and try again."), true);
+    } finally {
+      announcementSaveButton.disabled = false;
+    }
   });
 
   imageInput.addEventListener("change", function () {
