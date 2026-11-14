@@ -13,16 +13,39 @@
     status.textContent = "Live inventory is temporarily unavailable. Please contact us to check availability.";
   }
 
-  function getSpecifications(value) {
+  function getSpecificationEntries(value) {
     if (Array.isArray(value)) {
-      return value.map(String);
+      return value.map(function (line, index) {
+        var text = String(line);
+        var separator = text.indexOf(":");
+        return separator > 0
+          ? { label: text.slice(0, separator).trim(), value: text.slice(separator + 1).trim() }
+          : { label: "Details " + (index + 1), value: text };
+      }).filter(function (entry) {
+        return entry.label && entry.value;
+      });
     }
     if (value && typeof value === "object") {
       return Object.keys(value).map(function (key) {
-        return key + ": " + String(value[key]);
+        return { label: key, value: String(value[key] || "").trim() };
+      }).filter(function (entry) {
+        return entry.label && entry.value;
       });
     }
     return [];
+  }
+
+  function appendSpecificationRows(list, specifications) {
+    specifications.forEach(function (specification) {
+      var row = document.createElement("div");
+      var label = document.createElement("dt");
+      label.textContent = specification.label;
+      var value = document.createElement("dd");
+      value.textContent = specification.value;
+      row.appendChild(label);
+      row.appendChild(value);
+      list.appendChild(row);
+    });
   }
 
   function safeImageUrl(value) {
@@ -71,11 +94,11 @@
     if (product.description) {
       lines.push("Description: " + product.description);
     }
-    var specifications = getSpecifications(product.specifications);
+    var specifications = getSpecificationEntries(product.specifications);
     if (specifications.length) {
       lines.push("Specifications:");
       specifications.forEach(function (specification) {
-        lines.push("- " + specification);
+        lines.push("- " + specification.label + ": " + specification.value);
       });
     }
     lines.push("Please let me know if it is available.");
@@ -268,16 +291,25 @@
       details.appendChild(description);
     }
 
-    var specifications = getSpecifications(product.specifications);
+    var specifications = getSpecificationEntries(product.specifications);
     if (specifications.length) {
-      var specList = document.createElement("ul");
-      specList.className = "product-specs";
-      specifications.forEach(function (specification) {
-        var item = document.createElement("li");
-        item.textContent = specification;
-        specList.appendChild(item);
-      });
+      var visibleSpecifications = specifications.slice(0, 4);
+      var specList = document.createElement("dl");
+      specList.className = "product-spec-grid";
+      appendSpecificationRows(specList, visibleSpecifications);
       details.appendChild(specList);
+      if (specifications.length > visibleSpecifications.length) {
+        var additionalDetails = document.createElement("details");
+        additionalDetails.className = "product-spec-more";
+        var additionalSummary = document.createElement("summary");
+        additionalSummary.textContent = "See all " + specifications.length + " specifications";
+        var additionalList = document.createElement("dl");
+        additionalList.className = "product-spec-grid full-spec-list";
+        appendSpecificationRows(additionalList, specifications.slice(visibleSpecifications.length));
+        additionalDetails.appendChild(additionalSummary);
+        additionalDetails.appendChild(additionalList);
+        details.appendChild(additionalDetails);
+      }
     }
 
     var currency = product.currency === "GHS" ? "₵" : (product.currency || "GHS") + " ";
@@ -358,6 +390,9 @@
         return;
       }
 
+      document.querySelectorAll(".shop_section:not(.managed_inventory_section)").forEach(function (legacySection) {
+        legacySection.hidden = true;
+      });
       result.data.forEach(function (product) {
         productsContainer.appendChild(createProductCard(product));
       });
