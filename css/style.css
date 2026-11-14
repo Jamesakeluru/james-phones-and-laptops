@@ -96,6 +96,60 @@ h2 {
   padding: 10px 0;
 }
 
+.store-announcement[hidden] {
+  display: none !important;
+}
+
+.store-announcement {
+  width: 100%;
+  background: #15745c;
+  color: #ffffff;
+}
+
+.store-announcement-inner {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 7px 88px 7px 16px;
+  text-align: center;
+}
+
+.store-announcement-label {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+
+.store-announcement-message {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 575px) {
+  .store-announcement-inner {
+    gap: 6px;
+    padding-left: 10px;
+    font-size: 11px;
+  }
+
+  .store-announcement-label {
+    font-size: 9px;
+    letter-spacing: .8px;
+  }
+
+  .store-announcement-message {
+    font-size: 11px;
+  }
+}
+
 .custom_nav-container {
   padding-left: 0;
   padding-right: 0;
@@ -1051,4 +1105,4 @@ padding-top: 0;
     padding: 6px 12px;
     font-size: 11px;
   }
-}
+  }
