@@ -4,6 +4,9 @@
   var products = [];
   var editingId = null;
   var client = null;
+  var adminUserId = null;
+  var retainedImageUrls = [];
+  var selectedImageFiles = [];
 
   var authScreen = document.getElementById("auth-screen");
   var adminShell = document.getElementById("admin-shell");
@@ -18,6 +21,16 @@
   var form = document.getElementById("product-form");
   var formError = document.getElementById("form-error");
   var notice = document.getElementById("database-notice");
+  var categoryInput = document.getElementById("product-category");
+  var conditionInput = document.getElementById("product-condition");
+  var conditionHint = document.getElementById("condition-hint");
+  var imageInput = document.getElementById("product-images");
+  var imagePreviewList = document.getElementById("image-preview-list");
+
+  var imageBucket = "product-images";
+  var maxImageCount = 4;
+  var maxImageSize = 5 * 1024 * 1024;
+  var allowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/avif"];
 
   function setNotice(message, isError) {
     notice.textContent = message;
@@ -47,7 +60,7 @@
     try {
       var result = await client
         .from("products")
-        .select("id, name, category, price, stock, specifications")
+        .select("id, name, category, description, product_condition, images, image_url, active, price, stock, specifications")
         .order("created_at", { ascending: false });
       if (result.error) {
         reportError(result.error, "Could not load inventory.");
@@ -57,7 +70,8 @@
       products = result.data.map(function (product) {
         return Object.assign({}, product, {
           price: Number(product.price),
-          specifications: specificationLines(product.specifications)
+          specifications: specificationLines(product.specifications),
+          images: productImageUrls(product)
         });
       });
       setNotice("Connected. Inventory changes are saved to the store database.", false);
@@ -106,6 +120,151 @@
     return specifications;
   }
 
+  function productImageUrls(product) {
+    var urls = Array.isArray(product.images)
+      ? product.images.filter(function (url) {
+        return typeof url === "string" && url.trim();
+      })
+      : [];
+    if (!urls.length && typeof product.image_url === "string" && product.image_url.trim()) {
+      urls.push(product.image_url);
+    }
+    return urls.slice(0, maxImageCount);
+  }
+
+  function configureConditionOptions(preferredValue) {
+    var isLaptop = categoryInput.value === "Laptop";
+    var conditions = isLaptop
+      ? ["Fairly Used"]
+      : ["Brand New", "UK Used", "Fairly Used"];
+    conditionInput.replaceChildren(new Option("Choose condition", ""));
+    conditions.forEach(function (condition) {
+      conditionInput.add(new Option(condition, condition));
+    });
+    conditionInput.disabled = isLaptop;
+    conditionInput.required = categoryInput.value === "Phone";
+    conditionInput.value = conditions.indexOf(preferredValue) !== -1
+      ? preferredValue
+      : (isLaptop ? "Fairly Used" : "");
+    conditionHint.textContent = isLaptop
+      ? "Laptops are listed as fairly used."
+      : categoryInput.value === "Phone"
+        ? "Choose Brand New, UK Used, or Fairly Used."
+        : "Choose the condition shown to customers (optional for this category).";
+  }
+
+  function clearSelectedImageFiles() {
+    selectedImageFiles.forEach(function (selection) {
+      URL.revokeObjectURL(selection.previewUrl);
+    });
+    selectedImageFiles = [];
+  }
+
+  function renderImagePreviews() {
+    imagePreviewList.replaceChildren();
+    var images = retainedImageUrls.map(function (url, index) {
+      return { url: url, kind: "existing", index: index };
+    }).concat(selectedImageFiles.map(function (selection, index) {
+      return { url: selection.previewUrl, kind: "new", index: index };
+    }));
+
+    if (!images.length) {
+      var empty = document.createElement("p");
+      empty.className = "image-preview-empty";
+      empty.textContent = "No photos selected.";
+      imagePreviewList.appendChild(empty);
+      return;
+    }
+
+    images.forEach(function (item, index) {
+      var preview = document.createElement("div");
+      preview.className = "image-preview";
+      var image = document.createElement("img");
+      image.src = item.url;
+      image.alt = "Product photo " + (index + 1);
+      var removeButton = document.createElement("button");
+      removeButton.type = "button";
+      removeButton.className = "image-remove-button";
+      removeButton.dataset.imageKind = item.kind;
+      removeButton.dataset.imageIndex = String(item.index);
+      removeButton.setAttribute("aria-label", "Remove product photo " + (index + 1));
+      removeButton.textContent = "×";
+      preview.appendChild(image);
+      preview.appendChild(removeButton);
+      imagePreviewList.appendChild(preview);
+    });
+  }
+
+  function getStoragePath(imageUrl) {
+    try {
+      var projectUrl = new URL(window.JAMES_PHONES_SUPABASE.url);
+      var url = new URL(imageUrl);
+      var prefix = "/storage/v1/object/public/" + imageBucket + "/";
+      if (url.origin !== projectUrl.origin || url.pathname.indexOf(prefix) !== 0) {
+        return null;
+      }
+      return url.pathname.slice(prefix.length).split("/").map(function (segment) {
+        return decodeURIComponent(segment);
+      }).join("/");
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async function removeStoredImages(imageUrls) {
+    var paths = imageUrls.map(getStoragePath).filter(Boolean);
+    if (!paths.length) {
+      return;
+    }
+    var result = await client.storage.from(imageBucket).remove(paths);
+    if (result.error) {
+      throw result.error;
+    }
+  }
+
+  function makeImagePath(file) {
+    var extensionByType = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+      "image/avif": "avif"
+    };
+    var randomId = window.crypto && typeof window.crypto.randomUUID === "function"
+      ? window.crypto.randomUUID()
+      : Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
+    return adminUserId + "/" + randomId + "." + extensionByType[file.type];
+  }
+
+  async function uploadSelectedImages(uploadedUrls) {
+    if (selectedImageFiles.length && !adminUserId) {
+      throw new Error("Your admin session expired. Sign in again before uploading photos.");
+    }
+    for (var index = 0; index < selectedImageFiles.length; index += 1) {
+      var file = selectedImageFiles[index].file;
+      var path = makeImagePath(file);
+      var uploadResult = await client.storage.from(imageBucket).upload(path, file, {
+        contentType: file.type,
+        upsert: false
+      });
+      if (uploadResult.error) {
+        throw uploadResult.error;
+      }
+      var publicUrlResult = client.storage.from(imageBucket).getPublicUrl(path);
+      uploadedUrls.push(publicUrlResult.data.publicUrl);
+    }
+  }
+
+  async function discardUploadedImages(imageUrls) {
+    if (!imageUrls.length) {
+      return;
+    }
+    try {
+      await removeStoredImages(imageUrls);
+    } catch (error) {
+      console.error("Could not remove images uploaded for an unsuccessful product save.", error);
+    }
+  }
+
   function createCell(text, className) {
     var cell = document.createElement("td");
     cell.textContent = text;
@@ -119,7 +278,8 @@
     var query = search.value.trim().toLowerCase();
     var category = categoryFilter.value;
     var filtered = products.filter(function (product) {
-      var searchable = product.name + " " + product.specifications.join(" ");
+      var searchable = product.name + " " + (product.description || "") + " " +
+        (product.product_condition || "") + " " + product.specifications.join(" ");
       var matchesQuery = searchable.toLowerCase().indexOf(query) !== -1;
       var matchesCategory = category === "all" || product.category === category;
       return matchesQuery && matchesCategory;
@@ -129,12 +289,22 @@
     filtered.forEach(function (product) {
       var row = document.createElement("tr");
       var productCell = document.createElement("td");
+      var thumbnailUrl = productImageUrls(product)[0];
+      if (thumbnailUrl) {
+        var thumbnail = document.createElement("img");
+        thumbnail.className = "product-thumbnail";
+        thumbnail.src = thumbnailUrl;
+        thumbnail.alt = "";
+        thumbnail.loading = "lazy";
+        productCell.appendChild(thumbnail);
+      }
       var name = document.createElement("span");
       name.className = "product-name";
       name.textContent = product.name;
       productCell.appendChild(name);
       row.appendChild(productCell);
       row.appendChild(createCell(product.category, "product-category"));
+      row.appendChild(createCell(product.product_condition || "—", "product-category"));
       row.appendChild(createCell("GH₵" + product.price.toLocaleString("en-GH", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
@@ -162,24 +332,12 @@
       }
       row.appendChild(specsCell);
 
-      var statusCell = document.createElement("td");
-      var status = document.createElement("span");
-      status.className = "status-pill";
-      if (!stockIsKnown) {
-        status.classList.add("unknown-stock");
-        status.textContent = "Not set";
-      } else if (product.stock === 0) {
-        status.classList.add("out-of-stock");
-        status.textContent = "Out of stock";
-      } else if (product.stock <= 3) {
-        status.classList.add("low-stock");
-        status.textContent = "Low stock";
-      } else {
-        status.classList.add("in-stock");
-        status.textContent = "In stock";
-      }
-      statusCell.appendChild(status);
-      row.appendChild(statusCell);
+      var catalogCell = document.createElement("td");
+      var catalogStatus = document.createElement("span");
+      catalogStatus.className = "status-pill " + (product.active === false ? "hidden-product" : "published-product");
+      catalogStatus.textContent = product.active === false ? "Hidden" : "Published";
+      catalogCell.appendChild(catalogStatus);
+      row.appendChild(catalogCell);
 
       var actionsCell = document.createElement("td");
       var actions = document.createElement("div");
@@ -223,13 +381,20 @@
   function openProductDialog(product) {
     form.reset();
     formError.textContent = "";
+    clearSelectedImageFiles();
     editingId = product ? product.id : null;
     document.getElementById("dialog-title").textContent = product ? "Edit product" : "Add a product";
     form.elements.name.value = product ? product.name : "";
-    form.elements.category.value = product ? product.category : "Phone";
+    categoryInput.value = product ? product.category : "Phone";
+    configureConditionOptions(product ? product.product_condition : "");
+    form.elements.description.value = product ? (product.description || "") : "";
     form.elements.specifications.value = product ? product.specifications.join("\n") : "";
     form.elements.price.value = product ? product.price : "";
-    form.elements.stock.value = product ? product.stock : "";
+    form.elements.stock.value = product && product.stock !== null ? product.stock : "";
+    form.elements.active.checked = !product || product.active !== false;
+    retainedImageUrls = product ? productImageUrls(product) : [];
+    imageInput.value = "";
+    renderImagePreviews();
     dialog.showModal();
     form.elements.name.focus();
   }
@@ -243,6 +408,7 @@
 
   async function authorizeUser(user) {
     if (!user) {
+      adminUserId = null;
       showAuth("");
       return;
     }
@@ -256,6 +422,7 @@
       return;
     }
     if (!authorization.data) {
+      adminUserId = null;
       try {
         var signOutResult = await client.auth.signOut();
         if (signOutResult.error) {
@@ -267,6 +434,7 @@
       showAuth("This account is not authorized to manage the store.", true);
       return;
     }
+    adminUserId = user.id;
     showAdmin();
     await loadProducts();
   }
@@ -296,6 +464,8 @@
     client.auth.onAuthStateChange(function (event, session) {
       if (event === "SIGNED_OUT") {
         products = [];
+        adminUserId = null;
+        clearSelectedImageFiles();
         render();
         showAuth("");
       } else if (event === "TOKEN_REFRESHED" && session) {
@@ -331,6 +501,53 @@
   });
   search.addEventListener("input", render);
   categoryFilter.addEventListener("change", render);
+  categoryInput.addEventListener("change", function () {
+    configureConditionOptions(conditionInput.value);
+  });
+
+  imageInput.addEventListener("change", function () {
+    formError.textContent = "";
+    var files = Array.prototype.slice.call(imageInput.files || []);
+    var availableSlots = maxImageCount - retainedImageUrls.length - selectedImageFiles.length;
+    if (files.length > availableSlots) {
+      formError.textContent = "A product can have up to " + maxImageCount + " photos. Remove a photo before adding another.";
+      imageInput.value = "";
+      return;
+    }
+    var invalidFile = files.find(function (file) {
+      return allowedImageTypes.indexOf(file.type) === -1 || file.size > maxImageSize;
+    });
+    if (invalidFile) {
+      formError.textContent = "Use JPEG, PNG, WebP, or AVIF images no larger than 5 MB each.";
+      imageInput.value = "";
+      return;
+    }
+    files.forEach(function (file) {
+      selectedImageFiles.push({
+        file: file,
+        previewUrl: URL.createObjectURL(file)
+      });
+    });
+    imageInput.value = "";
+    renderImagePreviews();
+  });
+
+  imagePreviewList.addEventListener("click", function (event) {
+    var button = event.target.closest("button[data-image-kind]");
+    if (!button) {
+      return;
+    }
+    var index = Number(button.dataset.imageIndex);
+    if (button.dataset.imageKind === "existing") {
+      retainedImageUrls.splice(index, 1);
+    } else if (button.dataset.imageKind === "new") {
+      var removed = selectedImageFiles.splice(index, 1)[0];
+      if (removed) {
+        URL.revokeObjectURL(removed.previewUrl);
+      }
+    }
+    renderImagePreviews();
+  });
 
   list.addEventListener("click", async function (event) {
     var button = event.target.closest("button[data-action]");
@@ -357,6 +574,12 @@
           return;
         }
         await loadProducts();
+        try {
+          await removeStoredImages(productImageUrls(product));
+        } catch (imageError) {
+          reportError(imageError, "The product was deleted, but its stored photos could not be removed.");
+          return;
+        }
       } catch (error) {
         reportError(error, "Could not delete the product.");
         button.disabled = false;
@@ -413,38 +636,77 @@
       return;
     }
 
-    var product = {
-      name: form.elements.name.value.trim(),
-      category: form.elements.category.value,
-      stock: stock,
-      price: price,
-    };
-    if (!product.name) {
+    var name = form.elements.name.value.trim();
+    if (!name) {
       formError.textContent = "Enter a product name.";
       return;
     }
+    var category = categoryInput.value;
+    var condition = category === "Laptop" ? "Fairly Used" : conditionInput.value;
+    if (category === "Phone" && !condition) {
+      formError.textContent = "Choose whether this phone is Brand New, UK Used, or Fairly Used.";
+      return;
+    }
+    if (retainedImageUrls.length + selectedImageFiles.length > maxImageCount) {
+      formError.textContent = "A product can have up to " + maxImageCount + " photos.";
+      return;
+    }
+    var specifications;
     try {
-      product.specifications = parseSpecifications(form.elements.specifications.value);
+      specifications = parseSpecifications(form.elements.specifications.value);
     } catch (error) {
       formError.textContent = error.message;
       return;
     }
 
     var submitButton = form.querySelector('button[type="submit"]');
+    var uploadedImageUrls = [];
+    var existingProduct = editingId && products.find(function (item) {
+      return item.id === editingId;
+    });
+    var previousImageUrls = existingProduct ? productImageUrls(existingProduct) : [];
+    var saveCompleted = false;
     submitButton.disabled = true;
     try {
+      await uploadSelectedImages(uploadedImageUrls);
+      var images = retainedImageUrls.concat(uploadedImageUrls);
+      var product = {
+        name: name,
+        category: category,
+        product_condition: condition || null,
+        description: form.elements.description.value.trim(),
+        images: images,
+        image_url: images.length ? images[0] : null,
+        active: form.elements.active.checked,
+        stock: stock,
+        price: price,
+        specifications: specifications
+      };
       var result = editingId
         ? await client.from("products").update(product).eq("id", editingId).select("id").single()
         : await client.from("products").insert(product).select("id").single();
       if (result.error) {
-        formError.textContent = "Could not save product. " + result.error.message;
-        reportError(result.error, "Could not save product.");
-        return;
+        throw result.error;
       }
+      saveCompleted = true;
+      var removedImageUrls = previousImageUrls.filter(function (url) {
+        return images.indexOf(url) === -1;
+      });
       dialog.close();
+      clearSelectedImageFiles();
       await loadProducts();
+      if (removedImageUrls.length) {
+        try {
+          await removeStoredImages(removedImageUrls);
+        } catch (imageError) {
+          reportError(imageError, "Product saved, but removed photos could not be deleted from storage.");
+        }
+      }
     } catch (error) {
-      formError.textContent = "Could not save product. Check your connection and try again.";
+      if (!saveCompleted) {
+        await discardUploadedImages(uploadedImageUrls);
+      }
+      formError.textContent = "Could not save product. " + (error.message || "Check your connection and try again.");
       reportError(error, "Could not save product.");
     } finally {
       submitButton.disabled = false;

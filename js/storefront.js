@@ -4,6 +4,8 @@
   var section = document.getElementById("managed-inventory");
   var productsContainer = document.getElementById("managed-products");
   var status = document.getElementById("managed-status");
+  var cartCount = document.getElementById("managed-cart-count");
+  var cartStorageKey = "james-phones-cart-v1";
 
   function showUnavailable() {
     section.hidden = false;
@@ -39,14 +41,147 @@
     return null;
   }
 
+  function getProductImages(product) {
+    var images = Array.isArray(product.images)
+      ? product.images.filter(function (image) {
+        return typeof image === "string" && image.trim();
+      })
+      : [];
+    if (!images.length && product.image_url) {
+      images.push(product.image_url);
+    }
+    return images.slice(0, 4).map(safeImageUrl).filter(Boolean);
+  }
+
+  function getWhatsAppMessage(product) {
+    var lines = [
+      "Hello, I am interested in this product:",
+      product.name,
+      "Category: " + product.category
+    ];
+    if (product.product_condition) {
+      lines.push("Condition: " + product.product_condition);
+    }
+    if (product.price !== null && Number.isFinite(Number(product.price))) {
+      lines.push("Price: GH₵" + Number(product.price).toLocaleString("en-GH", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      }));
+    }
+    if (product.description) {
+      lines.push("Description: " + product.description);
+    }
+    var specifications = getSpecifications(product.specifications);
+    if (specifications.length) {
+      lines.push("Specifications:");
+      specifications.forEach(function (specification) {
+        lines.push("- " + specification);
+      });
+    }
+    lines.push("Please let me know if it is available.");
+    return lines.join("\n");
+  }
+
+  function readCart() {
+    var savedCart = window.localStorage.getItem(cartStorageKey);
+    if (!savedCart) {
+      return [];
+    }
+    var cart = JSON.parse(savedCart);
+    if (!Array.isArray(cart) || cart.some(function (item) {
+      return !item || typeof item.id !== "string" ||
+        !Number.isInteger(item.quantity) || item.quantity < 1;
+    })) {
+      throw new Error("The saved order is not in a valid format.");
+    }
+    return cart;
+  }
+
+  function updateCartCount() {
+    try {
+      var quantity = readCart().reduce(function (total, item) {
+        return total + item.quantity;
+      }, 0);
+      cartCount.textContent = String(quantity);
+      return true;
+    } catch (error) {
+      console.error("Could not read the saved order.", error);
+      cartCount.textContent = "!";
+      status.classList.add("error");
+      status.textContent = "Your saved order could not be read. Open the order page to review it.";
+      return false;
+    }
+  }
+
+  function addToCart(product) {
+    try {
+      var cart = readCart();
+      var cartItem = cart.find(function (item) {
+        return item.id === String(product.id);
+      });
+      if (Number.isInteger(product.stock) && product.stock === 0) {
+        throw new Error("This product is currently out of stock.");
+      }
+      if (cartItem && Number.isInteger(product.stock) && cartItem.quantity >= product.stock) {
+        throw new Error("Your order already contains all available units of this product.");
+      }
+      if (cartItem) {
+        cartItem.quantity += 1;
+      } else {
+        cart.push({
+          id: String(product.id),
+          name: product.name,
+          category: product.category,
+          product_condition: product.product_condition || "",
+          description: product.description || "",
+          specifications: product.specifications || {},
+          price: Number(product.price),
+          currency: product.currency || "GHS",
+          stock: Number.isInteger(product.stock) ? product.stock : null,
+          quantity: 1
+        });
+      }
+      window.localStorage.setItem(cartStorageKey, JSON.stringify(cart));
+      updateCartCount();
+      status.classList.remove("error");
+      status.textContent = "Added " + product.name + " to your order. Review your order to send it on WhatsApp.";
+    } catch (error) {
+      console.error("Could not add the product to the saved order.", error);
+      status.classList.add("error");
+      status.textContent = error.message || "Could not save your order. Check your browser storage settings.";
+    }
+  }
+
+  function wireLegacyProducts() {
+    document.querySelectorAll(".shop_section:not(.managed_inventory_section) .box > a[href='payment.html']")
+      .forEach(function (link) {
+        var details = link.querySelector(".detail-box");
+        var name = details && details.querySelector("h6");
+        if (!name || !name.textContent.trim()) {
+          return;
+        }
+        var lines = [
+          "Hello, I am interested in " + name.textContent.trim() + "."
+        ];
+        var price = details.querySelector(".gay");
+        if (price && price.textContent.trim()) {
+          lines.push("Listed " + price.textContent.trim().replace(/\s+/g, " "));
+        }
+        lines.push("Please confirm availability.");
+        link.href = "https://wa.me/233596460176?text=" + encodeURIComponent(lines.join("\n"));
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+      });
+  }
+
   function createProductCard(product) {
     var column = document.createElement("div");
     column.className = "col-sm-6 col-md-4 col-lg-3 managed-product-card";
     var card = document.createElement("div");
     card.className = "box";
     var link = document.createElement("a");
-    link.href = "https://wa.me/233596460176?text=" +
-      encodeURIComponent("Hello, I am interested in " + product.name + ".");
+    link.className = "managed-product-link";
+    link.href = "https://wa.me/233596460176?text=" + encodeURIComponent(getWhatsAppMessage(product));
     link.target = "_blank";
     link.rel = "noopener noreferrer";
 
@@ -55,18 +190,57 @@
     var placeholder = document.createElement("span");
     placeholder.className = "managed-image-placeholder";
     placeholder.textContent = "Image coming soon";
-    var imageUrl = safeImageUrl(product.image_url);
-    if (imageUrl) {
-      var image = document.createElement("img");
-      image.src = imageUrl;
-      image.alt = product.name;
-      image.loading = "lazy";
-      image.addEventListener("error", function () {
-        image.hidden = true;
-        placeholder.hidden = false;
+    var imageUrls = getProductImages(product);
+    if (imageUrls.length) {
+      var gallery = document.createElement("div");
+      gallery.className = "managed-gallery-track";
+      gallery.setAttribute("aria-label", product.name + " photos");
+      imageUrls.forEach(function (imageUrl, index) {
+        var image = document.createElement("img");
+        image.src = imageUrl;
+        image.alt = product.name + " photo " + (index + 1);
+        image.loading = "lazy";
+        image.addEventListener("error", function () {
+          image.hidden = true;
+          if (!gallery.querySelector("img:not([hidden])")) {
+            placeholder.hidden = false;
+          }
+        });
+        gallery.appendChild(image);
       });
       placeholder.hidden = true;
-      imageBox.appendChild(image);
+      imageBox.appendChild(gallery);
+      if (imageUrls.length > 1) {
+        var photoCount = document.createElement("span");
+        photoCount.className = "managed-gallery-count";
+        photoCount.setAttribute("aria-live", "polite");
+        photoCount.textContent = "1 / " + imageUrls.length;
+        var previous = document.createElement("button");
+        previous.type = "button";
+        previous.className = "managed-gallery-button previous";
+        previous.setAttribute("aria-label", "Previous photo");
+        previous.textContent = "‹";
+        var next = document.createElement("button");
+        next.type = "button";
+        next.className = "managed-gallery-button next";
+        next.setAttribute("aria-label", "Next photo");
+        next.textContent = "›";
+        var currentIndex = 0;
+        function moveGallery(step) {
+          currentIndex = (currentIndex + step + imageUrls.length) % imageUrls.length;
+          gallery.style.transform = "translateX(-" + (currentIndex * 100) + "%)";
+          photoCount.textContent = (currentIndex + 1) + " / " + imageUrls.length;
+        }
+        previous.addEventListener("click", function () {
+          moveGallery(-1);
+        });
+        next.addEventListener("click", function () {
+          moveGallery(1);
+        });
+        imageBox.appendChild(previous);
+        imageBox.appendChild(next);
+        imageBox.appendChild(photoCount);
+      }
     }
     imageBox.appendChild(placeholder);
 
@@ -80,6 +254,12 @@
     name.textContent = product.name;
     details.appendChild(category);
     details.appendChild(name);
+    if (product.product_condition) {
+      var condition = document.createElement("p");
+      condition.className = "product-condition";
+      condition.textContent = product.product_condition;
+      details.appendChild(condition);
+    }
 
     if (product.description) {
       var description = document.createElement("p");
@@ -131,16 +311,28 @@
 
     var action = document.createElement("span");
     action.className = "product-cta";
-    action.textContent = "Ask about this item";
+    action.textContent = "Ask on WhatsApp";
     details.appendChild(action);
-    link.appendChild(imageBox);
     link.appendChild(details);
+    card.appendChild(imageBox);
     card.appendChild(link);
+    var addButton = document.createElement("button");
+    addButton.type = "button";
+    addButton.className = "managed-cart-add";
+    addButton.textContent = Number.isInteger(product.stock) && product.stock === 0
+      ? "Out of stock"
+      : "Add to order";
+    addButton.disabled = Number.isInteger(product.stock) && product.stock === 0;
+    addButton.addEventListener("click", function () {
+      addToCart(product);
+    });
+    card.appendChild(addButton);
     column.appendChild(card);
     return column;
   }
 
   async function loadProducts() {
+    wireLegacyProducts();
     var config = window.JAMES_PHONES_SUPABASE;
     if (!config || !config.url || !config.anonKey ||
         config.url.indexOf("YOUR_") !== -1 || config.anonKey.indexOf("YOUR_") !== -1 ||
@@ -151,9 +343,10 @@
 
     try {
       var client = window.supabase.createClient(config.url, config.anonKey);
+      updateCartCount();
       var result = await client
         .from("products")
-        .select("id, name, category, description, specifications, price, currency, image_url, stock")
+        .select("id, name, category, description, product_condition, specifications, price, currency, image_url, images, stock")
         .eq("active", true)
         .order("created_at", { ascending: false });
       if (result.error) {
@@ -168,7 +361,9 @@
       result.data.forEach(function (product) {
         productsContainer.appendChild(createProductCard(product));
       });
-      status.textContent = "";
+      if (!status.classList.contains("error")) {
+        status.textContent = "";
+      }
       section.hidden = false;
     } catch (error) {
       console.error("Could not connect to live inventory.", error);
