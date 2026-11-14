@@ -136,7 +136,7 @@
     }
   }
 
-  function addToCart(product) {
+  function addToCart(product, feedback) {
     try {
       var cart = readCart();
       var cartItem = cart.find(function (item) {
@@ -165,36 +165,22 @@
         });
       }
       window.localStorage.setItem(cartStorageKey, JSON.stringify(cart));
-      updateCartCount();
+      if (!updateCartCount()) {
+        throw new Error("Your order was saved, but the order summary could not be updated. Open the order page to check it.");
+      }
       status.classList.remove("error");
       status.textContent = "Added " + product.name + " to your order. Review your order to send it on WhatsApp.";
+      feedback.classList.remove("error");
+      feedback.textContent = product.name + " added to your order.";
+      return true;
     } catch (error) {
       console.error("Could not add the product to the saved order.", error);
       status.classList.add("error");
       status.textContent = error.message || "Could not save your order. Check your browser storage settings.";
+      feedback.classList.add("error");
+      feedback.textContent = error.message || "Could not add this product to your order.";
+      return false;
     }
-  }
-
-  function wireLegacyProducts() {
-    document.querySelectorAll(".shop_section:not(.managed_inventory_section) .box > a[href='payment.html']")
-      .forEach(function (link) {
-        var details = link.querySelector(".detail-box");
-        var name = details && details.querySelector("h6");
-        if (!name || !name.textContent.trim()) {
-          return;
-        }
-        var lines = [
-          "Hello, I am interested in " + name.textContent.trim() + "."
-        ];
-        var price = details.querySelector(".gay");
-        if (price && price.textContent.trim()) {
-          lines.push("Listed " + price.textContent.trim().replace(/\s+/g, " "));
-        }
-        lines.push("Please confirm availability.");
-        link.href = "https://wa.me/233596460176?text=" + encodeURIComponent(lines.join("\n"));
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-      });
   }
 
   function createProductCard(product) {
@@ -355,16 +341,20 @@
       ? "Out of stock"
       : "Add to order";
     addButton.disabled = Number.isInteger(product.stock) && product.stock === 0;
+    var feedback = document.createElement("p");
+    feedback.className = "managed-cart-feedback";
+    feedback.setAttribute("role", "status");
+    feedback.setAttribute("aria-live", "polite");
     addButton.addEventListener("click", function () {
-      addToCart(product);
+      addToCart(product, feedback);
     });
     card.appendChild(addButton);
+    card.appendChild(feedback);
     column.appendChild(card);
     return column;
   }
 
   async function loadProducts() {
-    wireLegacyProducts();
     var config = window.JAMES_PHONES_SUPABASE;
     if (!config || !config.url || !config.anonKey ||
         config.url.indexOf("YOUR_") !== -1 || config.anonKey.indexOf("YOUR_") !== -1 ||
@@ -391,12 +381,11 @@
         return;
       }
       if (!result.data || result.data.length === 0) {
+        status.textContent = "No products are currently available.";
+        section.hidden = false;
         return;
       }
 
-      document.querySelectorAll(".shop_section:not(.managed_inventory_section)").forEach(function (legacySection) {
-        legacySection.hidden = true;
-      });
       result.data.forEach(function (product) {
         productsContainer.appendChild(createProductCard(product));
       });
