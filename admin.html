@@ -86,7 +86,7 @@
           <div class="summary-icon stock-icon" aria-hidden="true">▦</div>
           <p>Units in stock</p>
           <strong id="stock-count">0</strong>
-          <span>Across all products</span>
+          <span>Known quantities only</span>
         </article>
         <article class="summary-card">
           <div class="summary-icon low-icon" aria-hidden="true">!</div>
@@ -175,8 +175,60 @@
       <p class="field-hint condition-hint" id="condition-hint">Choose the condition shown to customers.</p>
       <label for="product-description">Short description <span class="field-hint">(Optional)</span></label>
       <textarea id="product-description" name="description" rows="3" maxlength="500" placeholder="A short overview for the product card"></textarea>
-      <label for="product-specifications">Specifications <span class="field-hint">(Name: value, one per line)</span></label>
-      <textarea id="product-specifications" name="specifications" rows="4" maxlength="1200" placeholder="Storage: 128GB&#10;Battery health: 88%"></textarea>
+      <fieldset class="specification-group" data-spec-category="Phone">
+        <legend>Phone specifications</legend>
+        <p class="field-hint">Enter only the details you have confirmed.</p>
+        <div class="specification-grid">
+          <label>Region<input type="text" data-spec-key="Region" /></label>
+          <label>Brand<input type="text" data-spec-key="Brand" /></label>
+          <label>Model<input type="text" data-spec-key="Model" /></label>
+          <label>Storage capacity<input type="text" data-spec-key="Storage capacity" /></label>
+          <label>Storage type<input type="text" data-spec-key="Storage type" /></label>
+          <label>Display size<input type="text" data-spec-key="Display size" /></label>
+          <label>Color<input type="text" data-spec-key="Color" /></label>
+          <label>SIM configuration<input type="text" data-spec-key="SIM configuration" /></label>
+          <label>Packaging<input type="text" data-spec-key="Packaging" /></label>
+          <label>Battery health<input type="text" data-spec-key="Battery health" /></label>
+          <label>Exchange possible<input type="text" data-spec-key="Exchange possible" /></label>
+        </div>
+      </fieldset>
+      <fieldset class="specification-group" data-spec-category="Laptop" hidden>
+        <legend>Laptop specifications</legend>
+        <p class="field-hint">Enter only the details you have confirmed.</p>
+        <div class="specification-grid">
+          <label>Region<input type="text" data-spec-key="Region" /></label>
+          <label>Brand<input type="text" data-spec-key="Brand" /></label>
+          <label>Type<input type="text" data-spec-key="Type" /></label>
+          <label>Processor<input type="text" data-spec-key="Processor" /></label>
+          <label>Processor generation<input type="text" data-spec-key="Processor generation" /></label>
+          <label>Processor speed<input type="text" data-spec-key="Processor speed" /></label>
+          <label>Number of cores<input type="text" data-spec-key="Number of cores" /></label>
+          <label>RAM<input type="text" data-spec-key="RAM" /></label>
+          <label>Storage capacity<input type="text" data-spec-key="Storage capacity" /></label>
+          <label>Storage type<input type="text" data-spec-key="Storage type" /></label>
+          <label>Display size<input type="text" data-spec-key="Display size" /></label>
+          <label>Display resolution<input type="text" data-spec-key="Display resolution" /></label>
+          <label>Graphics card<input type="text" data-spec-key="Graphics card" /></label>
+          <label>Graphics memory<input type="text" data-spec-key="Graphics card memory" /></label>
+          <label>Operating system<input type="text" data-spec-key="Operating system" /></label>
+          <label>Color<input type="text" data-spec-key="Color" /></label>
+          <label>Exchange possible<input type="text" data-spec-key="Exchange possible" /></label>
+          <label class="specification-wide">Other features<input type="text" data-spec-key="Features" /></label>
+        </div>
+      </fieldset>
+      <fieldset class="specification-group" data-spec-category="Other" hidden>
+        <legend>Product specifications</legend>
+        <p class="field-hint">Enter only the details you have confirmed.</p>
+        <div class="specification-grid">
+          <label>Region<input type="text" data-spec-key="Region" /></label>
+          <label>Brand<input type="text" data-spec-key="Brand" /></label>
+          <label>Model<input type="text" data-spec-key="Model" /></label>
+          <label>Type<input type="text" data-spec-key="Type" /></label>
+          <label>Compatibility<input type="text" data-spec-key="Compatibility" /></label>
+          <label>Color<input type="text" data-spec-key="Color" /></label>
+          <label class="specification-wide">Other details<input type="text" data-spec-key="Features" /></label>
+        </div>
+      </fieldset>
       <label for="product-images">Product photos <span class="field-hint">(Up to 4, 5 MB each)</span></label>
       <input id="product-images" name="images" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple />
       <div class="image-preview-list" id="image-preview-list" aria-live="polite"></div>
@@ -186,8 +238,8 @@
           <input id="product-price" name="price" type="number" min="0" step="0.01" placeholder="0.00" required />
         </div>
         <div>
-          <label for="product-stock">Units in stock</label>
-          <input id="product-stock" name="stock" type="number" min="0" step="1" placeholder="0" required />
+          <label for="product-stock">Units in stock <span class="field-hint">(Leave blank if unknown)</span></label>
+          <input id="product-stock" name="stock" type="number" min="0" step="1" placeholder="Not entered" />
         </div>
       </div>
       <label class="catalog-toggle" for="product-active">
