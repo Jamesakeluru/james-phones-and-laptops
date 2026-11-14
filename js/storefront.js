@@ -69,19 +69,24 @@
   }
 
   function renderCategoryFilters() {
-    var categories = [];
-    var knownCategories = {};
+    var categories = ["Phone", "Laptop", "Accessory", "Other"];
+    var additionalCategories = [];
+    var knownCategories = Object.create(null);
+    categories.forEach(function (category) {
+      knownCategories[category.toLocaleLowerCase()] = true;
+    });
     products.forEach(function (product) {
       var category = String(product.category || "").trim();
       var key = category.toLocaleLowerCase();
       if (category && !knownCategories[key]) {
         knownCategories[key] = true;
-        categories.push(category);
+        additionalCategories.push(category);
       }
     });
-    categories.sort(function (first, second) {
+    additionalCategories.sort(function (first, second) {
       return first.localeCompare(second);
     });
+    categories = categories.concat(additionalCategories);
 
     categoryList.textContent = "";
     [{ label: "All", value: "" }].concat(categories.map(function (category) {
@@ -469,6 +474,10 @@
         return;
       }
       if (!result.data || result.data.length === 0) {
+        products = [];
+        productSearch.addEventListener("input", renderFilteredProducts);
+        productControls.hidden = false;
+        renderCategoryFilters();
         status.textContent = "No products are currently available.";
         section.hidden = false;
         return;
