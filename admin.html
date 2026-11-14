@@ -52,6 +52,9 @@
         <a class="nav-link" href="#blog-management">
           <span class="nav-icon" aria-hidden="true">▧</span> Blog
         </a>
+        <a class="nav-link" href="#testimonial-management">
+          <span class="nav-icon" aria-hidden="true">❝</span> Testimonials
+        </a>
         <a class="nav-link" href="index.html">
           <span class="nav-icon" aria-hidden="true">↗</span> View storefront
         </a>
@@ -115,18 +118,51 @@
         </div>
         <form class="promotion-form" id="promotion-form">
           <div class="promotion-fields">
-            <label for="offer-one-percent">First offer (% off)
-              <input id="offer-one-percent" name="offer_one_percent" type="number" min="1" max="100" step="1" required />
-            </label>
-            <label for="offer-two-percent">Second offer (% off)
-              <input id="offer-two-percent" name="offer_two_percent" type="number" min="1" max="100" step="1" required />
-            </label>
-            <label for="offer-three-percent">Third offer (% off)
-              <input id="offer-three-percent" name="offer_three_percent" type="number" min="1" max="100" step="1" required />
-            </label>
+            <div class="promotion-item">
+              <label for="offer-one-percent">First offer (% off)
+                <input id="offer-one-percent" name="offer_one_percent" type="number" min="1" max="100" step="1" required />
+              </label>
+              <div class="promotion-image-editor">
+                <label for="offer-one-image">Offer image</label>
+                <input id="offer-one-image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" />
+                <div class="promotion-image-preview">
+                  <img id="offer-one-image-preview" alt="Preview for the first offer" />
+                  <span id="offer-one-image-hint" class="field-hint"></span>
+                </div>
+                <button class="secondary-button promotion-image-remove" id="offer-one-image-remove" type="button" hidden>Use default image</button>
+              </div>
+            </div>
+            <div class="promotion-item">
+              <label for="offer-two-percent">Second offer (% off)
+                <input id="offer-two-percent" name="offer_two_percent" type="number" min="1" max="100" step="1" required />
+              </label>
+              <div class="promotion-image-editor">
+                <label for="offer-two-image">Offer image</label>
+                <input id="offer-two-image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" />
+                <div class="promotion-image-preview">
+                  <img id="offer-two-image-preview" alt="Preview for the second offer" />
+                  <span id="offer-two-image-hint" class="field-hint"></span>
+                </div>
+                <button class="secondary-button promotion-image-remove" id="offer-two-image-remove" type="button" hidden>Use default image</button>
+              </div>
+            </div>
+            <div class="promotion-item">
+              <label for="offer-three-percent">Third offer (% off)
+                <input id="offer-three-percent" name="offer_three_percent" type="number" min="1" max="100" step="1" required />
+              </label>
+              <div class="promotion-image-editor">
+                <label for="offer-three-image">Offer image</label>
+                <input id="offer-three-image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" />
+                <div class="promotion-image-preview">
+                  <img id="offer-three-image-preview" alt="Preview for the third offer" />
+                  <span id="offer-three-image-hint" class="field-hint"></span>
+                </div>
+                <button class="secondary-button promotion-image-remove" id="offer-three-image-remove" type="button" hidden>Use default image</button>
+              </div>
+            </div>
           </div>
           <p class="announcement-status" id="promotion-status" role="status" aria-live="polite"></p>
-          <button class="primary-button" id="promotion-save-button" type="submit">Save offer percentages</button>
+          <button class="primary-button" id="promotion-save-button" type="submit">Save offers</button>
         </form>
       </section>
 
@@ -156,6 +192,37 @@
             <h3>No blog posts yet</h3>
             <p>Create a post to publish it on the storefront.</p>
             <button class="secondary-button" id="empty-add-blog-button" type="button">Add a post</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="inventory-panel testimonial-admin-panel" id="testimonial-management" aria-labelledby="testimonial-management-title">
+        <div class="panel-heading">
+          <div>
+            <h2 id="testimonial-management-title">Testimonials</h2>
+            <p>Manage the customer name and message shown on the storefront.</p>
+          </div>
+          <button class="primary-button" id="add-testimonial-button" type="button">Add testimonial</button>
+        </div>
+        <p class="testimonial-admin-status" id="testimonial-admin-status" role="status" aria-live="polite">Loading testimonials...</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Person</th>
+                <th scope="col">Testimonial</th>
+                <th scope="col">Status</th>
+                <th scope="col">Last updated</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody id="testimonial-list"></tbody>
+          </table>
+          <div class="empty-state" id="testimonial-empty-state" hidden>
+            <span class="empty-icon" aria-hidden="true">❝</span>
+            <h3>No testimonials yet</h3>
+            <p>Add a testimonial to show it on the storefront.</p>
+            <button class="secondary-button" id="empty-add-testimonial-button" type="button">Add a testimonial</button>
           </div>
         </div>
       </section>
@@ -363,6 +430,30 @@
       <div class="dialog-actions">
         <button class="secondary-button" id="blog-cancel-button" type="button">Cancel</button>
         <button class="primary-button" id="blog-save-button" type="submit">Save post</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog class="product-dialog testimonial-dialog" id="testimonial-dialog" aria-labelledby="testimonial-dialog-title">
+    <form id="testimonial-form">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow">STOREFRONT CONTENT</p>
+          <h2 id="testimonial-dialog-title">Add a testimonial</h2>
+        </div>
+        <button class="close-button" id="testimonial-close-button" type="button" aria-label="Close dialog">×</button>
+      </div>
+      <label for="testimonial-person">Person</label>
+      <input id="testimonial-person" name="person_name" type="text" maxlength="100" required />
+      <label for="testimonial-text">Testimonial</label>
+      <textarea id="testimonial-text" name="testimonial_text" rows="6" maxlength="2000" required></textarea>
+      <label class="catalog-toggle" for="testimonial-published">
+        <input id="testimonial-published" name="is_published" type="checkbox" checked />
+        <span>Show this testimonial on the storefront</span>
+      </label>
+      <p class="form-error" id="testimonial-form-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button class="secondary-button" id="testimonial-cancel-button" type="button">Cancel</button>
+        <button class="primary-button" id="testimonial-save-button" type="submit">Save testimonial</button>
       </div>
     </form>
   </dialog>

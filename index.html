@@ -182,7 +182,7 @@
       <div class="row">
         <div class="col-md-7 px-0">
           <div class="box offer-box1">
-            <img src="13promax.png" alt="">
+            <img id="offer-one-image" src="13promax.png" alt="First phone offer">
             <div class="detail-box">
               <h2 id="offer-one-percent"></h2>
               <a href="https://wa.me/+233596460176">
@@ -195,7 +195,7 @@
         </div>
         <div class="col-md-5 px-0">
           <div class="box offer-box2">
-            <img  src="phone1.jpeg" alt="">
+            <img id="offer-two-image" src="phone1.jpeg" alt="Second phone offer">
             <div class="detail-box">
               <h2 id="offer-two-percent"></h2>
               <a href="https://wa.me/+233596460176">
@@ -206,7 +206,7 @@
             </div>
           </div>
           <div class="box offer-box3">
-            <img class="off" src="13.png" alt="">
+            <img id="offer-three-image" class="off" src="13.png" alt="Third phone offer">
             <div class="detail-box">
               <h2 id="offer-three-percent"></h2>
               <a href="https://wa.me/+233596460176">
@@ -240,88 +240,21 @@
 
   <!-- client section -->
 
-  <section class="client_section layout_padding">
+  <section class="client_section layout_padding testimonial-section" id="store-testimonials" hidden>
     <div class="container">
       <div class="heading_container">
         <h2>
           Testimonial
         </h2>
       </div>
-      <div id="carouselExample2Controls" class="carousel slide" data-ride="carousel">
-        <div class="carousel-inner">
-          <div class="carousel-item active">
-            <div class="row">
-              <div class="col-md-11 col-lg-10 mx-auto">
-                <div class="box">
-                  <div class="img-box">
-                    <img src="cl.jpg" alt="" />
-                  </div>
-                  <div class="detail-box">
-                    <div class="name">
-                      <h6>
-                        Kelinza Mary
-                      </h6>
-                    </div>
-                    <p>
-                      I recently purchased a smartphone from James Phones, and I couldn't be happier with the experience. As a tech enthusiast, I value detailed knowledge and excellent customer service. James provided insightful recommendations and made the entire purchasing process seamless. The phone arrived quickly and in perfect condition. I'm impressed with the quality and the competitive pricing. Highly recommend James Phones for anyone looking for top-notch tech products!
-                    </p>
-                    <i class="fa fa-quote-left" aria-hidden="true"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="carousel-item">
-            <div class="row">
-              <div class="col-md-11 col-lg-10 mx-auto">
-                <div class="box">
-                  <div class="img-box">
-                    <img src="cl1.jpg" alt="" />
-                  </div>
-                  <div class="detail-box">
-                    <div class="name">
-                      <h6>
-                        Akeluru Vera
-                      </h6>
-                    </div>
-                    <p>
-                      I purchased a new smartphone from James Phones, and the experience was fantastic. James took the time to understand my needs and recommended the perfect phone for my business. The transaction was smooth, and the delivery was swift. The customer service was exceptional, and I felt valued as a customer. I highly recommend James Phones to anyone looking for reliable and professional service.
-                    </p>
-                    <i class="fa fa-quote-left" aria-hidden="true"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="carousel-item">
-            <div class="row">
-              <div class="col-md-11 col-lg-10 mx-auto">
-                <div class="box">
-                  <div class="img-box">
-                    <img src="cl2.jpg" alt="" />
-                  </div>
-                  <div class="detail-box">
-                    <div class="name">
-                      <h6>
-                        Hawa...
-                      </h6>
-                    </div>
-                    <p>
-                      As a fellow student, I appreciate the affordability and quality of the phones available at James Phones. I bought a phone that fits my budget and meets all my academic and personal needs. James was incredibly helpful and knowledgeable, making the purchase easy and stress-free. I'm thrilled with my new phone and the excellent customer support. Thanks, James Phones!
-                    </p>
-                    <i class="fa fa-quote-left" aria-hidden="true"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="carousel_btn-container">
-          <a class="carousel-control-prev" href="#carouselExample2Controls" role="button" data-slide="prev">
+      <div id="carouselExample2Controls" class="carousel slide">
+        <div class="carousel-inner" id="testimonial-carousel-items"></div>
+        <div class="carousel_btn-container" id="testimonial-controls" hidden>
+          <a class="carousel-control-prev" href="#carouselExample2Controls" role="button" data-slide="prev" aria-label="Previous testimonial">
             <i class="fa fa-long-arrow-left" aria-hidden="true"></i>
             <span class="sr-only">Previous</span>
           </a>
-          <a class="carousel-control-next" href="#carouselExample2Controls" role="button" data-slide="next">
+          <a class="carousel-control-next" href="#carouselExample2Controls" role="button" data-slide="next" aria-label="Next testimonial">
             <i class="fa fa-long-arrow-right" aria-hidden="true"></i>
             <span class="sr-only">Next</span>
           </a>
@@ -462,6 +395,7 @@
   <script src="js/storefront.js"></script>
   <script src="js/announcement.js"></script>
   <script src="js/promotions.js"></script>
+  <script src="js/testimonials.js"></script>
   <script src="js/blog.js"></script>
 
 </body>

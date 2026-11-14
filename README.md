@@ -8,13 +8,17 @@ Admins can create, edit, publish, hide, and delete products; manage prices, stoc
 
 Admins can also edit and show or hide a single store announcement. When enabled, it appears as a moving banner on public pages and is stored in the Supabase `store_announcement` table. Public pages also show a phone and laptop repair contact bar with call and WhatsApp links for 0558649860.
 
-The admin page also manages the three homepage offer percentages and blog posts. Offer values are stored in `public.store_promotions` and update the displayed offer labels; they do not automatically change product prices. Blog posts are stored in `public.store_blog_posts`, and only published posts appear on the homepage and blog page. Both tables allow public reads only where needed and restrict management to users listed in `public.admin_users`.
+The admin page also manages the three homepage offers, blog posts, and testimonials. Offer percentages and image URLs are stored in `public.store_promotions`; uploaded offer images use the existing `product-images` Storage bucket. Percentages update the displayed offer labels and do not automatically change product prices. Testimonials are stored in `public.store_testimonials`; admins can edit a person's name and testimonial, publish or hide it, and remove entries. Only published testimonials appear on the storefront.
 
 ## Orders
 
 Customers can search live inventory and filter by category buttons populated from active Supabase products. Adding a product gives a clear on-card confirmation and briefly disables the button to prevent accidental repeat clicks. Customers can review the order and send product details, specifications, and an optional contact number to WhatsApp. The site does not collect online payments. Product listings are loaded from Supabase without a hard-coded catalog fallback.
 
 The About page describes the shop and its phone and laptop repair services at Accra Circle.
+
+## Database update
+
+After the original Supabase setup, run `supabase/migrations/20261114_offer_images_and_testimonials.sql` once in the Supabase SQL Editor. It adds the three offer image URL columns, creates the testimonials table with public-read/admin-write policies, and imports the current testimonial text so the entries remain editable.
 
 ## Configuration and security
 
