@@ -164,13 +164,53 @@
   line-height: 1.6;
 }
 
-.managed-product-card .product-specs {
+.managed-product-card .product-spec-grid {
+  display: grid;
   width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
   margin: 0;
-  padding-left: 17px;
-  color: #65716a;
+}
+
+.managed-product-card .product-spec-grid > div {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #edf0ee;
+  border-radius: 6px;
+  background: #fbfcfb;
+}
+
+.managed-product-card .product-spec-grid dt {
+  overflow: hidden;
+  color: #89938e;
+  font-size: 9px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.managed-product-card .product-spec-grid dd {
+  margin: 3px 0 0;
+  color: #27342e;
   font-size: 11px;
-  line-height: 1.55;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.managed-product-card .product-spec-more {
+  width: 100%;
+  color: #15745c;
+  font-size: 10px;
+}
+
+.managed-product-card .product-spec-more summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.managed-product-card .full-spec-list {
+  margin-top: 8px;
 }
 
 .managed-product-card .product-price {
