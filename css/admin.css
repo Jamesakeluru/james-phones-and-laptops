@@ -294,6 +294,9 @@ td { padding: 13px 16px; border-top: 1px solid #f0f2f1; color: #5e6a64; font-siz
 .product-dialog input, .product-dialog select { height: 40px; }
 .product-dialog textarea { min-height: 88px; padding-top: 9px; resize: vertical; line-height: 1.5; }
 .field-hint { color: #8a948f; font-size: 10px; font-weight: 400; }
+.product-step { margin: 4px 0 8px; color: var(--green); font-size: 11px; font-weight: 800; }
+.product-choice-hint { margin: -10px 0 13px; }
+.product-dialog select:disabled { background: #f3f5f4; color: #89938e; cursor: not-allowed; }
 .condition-hint { margin: -9px 0 15px; }
 .specification-group { min-width: 0; margin: 0 0 16px; padding: 12px 12px 2px; border: 1px solid var(--line); border-radius: 8px; }
 .specification-group legend { padding: 0 5px; color: #27342e; font-family: "Manrope", sans-serif; font-size: 12px; font-weight: 700; }
