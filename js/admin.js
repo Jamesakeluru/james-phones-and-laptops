@@ -30,6 +30,12 @@
   var formError = document.getElementById("form-error");
   var notice = document.getElementById("database-notice");
   var categoryInput = document.getElementById("product-category");
+  var brandInput = document.getElementById("product-brand");
+  var brandCustomWrap = document.getElementById("product-brand-custom-wrap");
+  var brandCustomInput = document.getElementById("product-brand-custom");
+  var productNameSelect = document.getElementById("product-name-select");
+  var productNameCustomWrap = document.getElementById("product-name-custom-wrap");
+  var productNameInput = document.getElementById("product-name");
   var conditionInput = document.getElementById("product-condition");
   var conditionHint = document.getElementById("condition-hint");
   var imageInput = document.getElementById("product-images");
@@ -89,6 +95,24 @@
   var maxImageCount = 4;
   var maxImageSize = 5 * 1024 * 1024;
   var allowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+  var customChoice = "__custom__";
+  var noBrandChoice = "__none__";
+  var commonSpecificationSuggestions = {
+    Phone: {
+      "Storage capacity": ["64GB", "128GB", "256GB", "512GB", "1TB", "2TB"],
+      "SIM configuration": ["Single SIM", "Dual SIM", "eSIM", "Physical SIM + eSIM"]
+    },
+    Laptop: {
+      "RAM": ["4GB", "8GB", "12GB", "16GB", "32GB", "64GB"],
+      "Storage capacity": ["64GB", "128GB", "256GB", "512GB", "1TB", "2TB"],
+      "Storage type": ["SSD", "HDD", "eMMC"],
+      "Display resolution": ["HD", "FHD", "QHD", "4K"],
+      "Processor generation": ["8th Gen", "9th Gen", "10th Gen", "11th Gen", "12th Gen", "13th Gen", "14th Gen"]
+    },
+    Other: {
+      "Storage capacity": ["64GB", "128GB", "256GB", "512GB", "1TB", "2TB"]
+    }
+  };
 
   function setNotice(message, isError) {
     notice.textContent = message;
@@ -459,6 +483,175 @@
     });
   }
 
+  function getProductBrand(product) {
+    return String(normalizeSpecifications(product.specifications).Brand || "").trim();
+  }
+
+  function getSelectedBrand() {
+    if (brandInput.value === customChoice) {
+      return brandCustomInput.value.trim();
+    }
+    return brandInput.value === noBrandChoice ? "" : brandInput.value.trim();
+  }
+
+  function configureBrandInput() {
+    var isCustom = brandInput.value === customChoice;
+    brandCustomWrap.hidden = !isCustom;
+    brandCustomInput.required = isCustom;
+    if (!isCustom) {
+      brandCustomInput.value = "";
+    }
+  }
+
+  function populateBrandOptions(selectedBrand, chooseNoBrand) {
+    var brands = [];
+    products.forEach(function (product) {
+      var brand = getProductBrand(product);
+      if (product.category === categoryInput.value && brand && brands.indexOf(brand) === -1) {
+        brands.push(brand);
+      }
+    });
+    brands.sort(function (left, right) {
+      return left.toLowerCase().localeCompare(right.toLowerCase());
+    });
+
+    brandInput.replaceChildren(new Option("Choose a brand", ""));
+    brands.forEach(function (brand) {
+      brandInput.add(new Option(brand, brand));
+    });
+    brandInput.add(new Option("Unbranded / not specified", noBrandChoice));
+    brandInput.add(new Option("Add a new brand…", customChoice));
+
+    if (selectedBrand && brands.indexOf(selectedBrand) !== -1) {
+      brandInput.value = selectedBrand;
+      brandCustomInput.value = "";
+    } else if (selectedBrand) {
+      brandInput.value = customChoice;
+      brandCustomInput.value = selectedBrand;
+    } else if (chooseNoBrand) {
+      brandInput.value = noBrandChoice;
+      brandCustomInput.value = "";
+    } else {
+      brandInput.value = "";
+      brandCustomInput.value = "";
+    }
+    configureBrandInput();
+  }
+
+  function configureProductNameInput() {
+    var isCustom = productNameSelect.value === customChoice;
+    productNameCustomWrap.hidden = !isCustom;
+    productNameInput.required = isCustom;
+    if (!isCustom && productNameSelect.value) {
+      productNameInput.value = productNameSelect.value;
+    } else if (!isCustom) {
+      productNameInput.value = "";
+    }
+  }
+
+  function populateProductNameOptions(selectedName) {
+    var hasBrandChoice = brandInput.value !== "";
+    var selectedBrand = getSelectedBrand();
+    var names = [];
+    if (hasBrandChoice && (brandInput.value !== customChoice || selectedBrand)) {
+      products.forEach(function (product) {
+        if (product.category === categoryInput.value &&
+            getProductBrand(product) === selectedBrand &&
+            names.indexOf(product.name) === -1) {
+          names.push(product.name);
+        }
+      });
+    }
+    names.sort(function (left, right) {
+      return left.toLowerCase().localeCompare(right.toLowerCase());
+    });
+
+    productNameSelect.replaceChildren(new Option(
+      hasBrandChoice ? "Choose a product name" : "Choose a brand first",
+      ""
+    ));
+    names.forEach(function (name) {
+      productNameSelect.add(new Option(name, name));
+    });
+    if (hasBrandChoice) {
+      productNameSelect.add(new Option("Enter a new product name…", customChoice));
+    }
+    productNameSelect.disabled = !hasBrandChoice;
+
+    if (selectedName && names.indexOf(selectedName) !== -1) {
+      productNameSelect.value = selectedName;
+      productNameInput.value = selectedName;
+    } else if (selectedName && hasBrandChoice) {
+      productNameSelect.value = customChoice;
+      productNameInput.value = selectedName;
+    } else {
+      productNameSelect.value = "";
+      productNameInput.value = "";
+    }
+    configureProductNameInput();
+  }
+
+  function selectedProductName() {
+    return productNameSelect.value === customChoice
+      ? productNameInput.value.trim()
+      : productNameSelect.value.trim();
+  }
+
+  function configureSpecificationSuggestions() {
+    var inputs = Array.prototype.slice.call(form.querySelectorAll("[data-spec-key]"));
+    inputs.forEach(function (input, index) {
+      var dataList = document.createElement("datalist");
+      dataList.id = "product-spec-options-" + index;
+      input.setAttribute("list", dataList.id);
+      form.appendChild(dataList);
+    });
+  }
+
+  function refreshSpecificationSuggestions() {
+    var hasBrandChoice = brandInput.value !== "";
+    var selectedBrand = getSelectedBrand();
+    var selectedName = productNameSelect.value === customChoice ? "" : productNameSelect.value;
+    var matchingProducts = hasBrandChoice
+      ? products.filter(function (product) {
+        return product.category === categoryInput.value &&
+          getProductBrand(product) === selectedBrand &&
+          (!selectedName || product.name === selectedName);
+      })
+      : [];
+
+    Array.prototype.forEach.call(form.querySelectorAll("[data-spec-key]"), function (input) {
+      var dataList = document.getElementById(input.getAttribute("list"));
+      var key = input.dataset.specKey;
+      var values = [];
+      matchingProducts.forEach(function (product) {
+        var value = product.specifications[key];
+        if (value && values.indexOf(value) === -1) {
+          values.push(value);
+        }
+      });
+      var categorySuggestions = commonSpecificationSuggestions[categoryInput.value] || {};
+      if (!values.length && categorySuggestions[key]) {
+        values = categorySuggestions[key].slice();
+      }
+      dataList.replaceChildren();
+      values.forEach(function (value) {
+        dataList.appendChild(new Option(value, value));
+      });
+    });
+  }
+
+  function findSelectedCatalogProduct() {
+    var name = selectedProductName();
+    if (!name || productNameSelect.value === customChoice) {
+      return null;
+    }
+    return products.find(function (product) {
+      return product.category === categoryInput.value &&
+        product.name === name &&
+        getProductBrand(product) === getSelectedBrand();
+    }) || null;
+  }
+
   function configureSpecificationFields() {
     specificationGroups.forEach(function (group) {
       var isGeneralGroup = group.dataset.specCategory === "Other";
@@ -489,6 +682,10 @@
         specifications[input.dataset.specKey] = value;
       }
     });
+    var brand = getSelectedBrand();
+    if (brand) {
+      specifications.Brand = brand;
+    }
     return specifications;
   }
 
@@ -782,20 +979,23 @@
     clearSelectedImageFiles();
     editingId = product ? product.id : null;
     document.getElementById("dialog-title").textContent = product ? "Edit product" : "Add a product";
-    form.elements.name.value = product ? product.name : "";
     categoryInput.value = product ? product.category : "Phone";
     configureConditionOptions(product ? product.product_condition : "");
     configureSpecificationFields();
     form.elements.description.value = product ? (product.description || "") : "";
-    populateSpecificationFields(product ? product.specifications : {});
+    var specifications = product ? normalizeSpecifications(product.specifications) : {};
+    populateBrandOptions(specifications.Brand || "", Boolean(product && !specifications.Brand));
+    populateProductNameOptions(product ? product.name : "");
+    populateSpecificationFields(specifications);
     form.elements.price.value = product ? product.price : "";
     form.elements.stock.value = product && Number.isInteger(product.stock) ? product.stock : "";
     form.elements.active.checked = !product || product.active !== false;
     retainedImageUrls = product ? productImageUrls(product) : [];
     imageInput.value = "";
     renderImagePreviews();
+    refreshSpecificationSuggestions();
     dialog.showModal();
-    form.elements.name.focus();
+    (product ? productNameSelect : categoryInput).focus();
   }
 
   function showAuthError(error) {
@@ -923,8 +1123,38 @@
   search.addEventListener("input", render);
   categoryFilter.addEventListener("change", render);
   categoryInput.addEventListener("change", function () {
-    configureConditionOptions(conditionInput.value);
+    configureConditionOptions("");
     configureSpecificationFields();
+    populateSpecificationFields({});
+    populateBrandOptions("");
+    populateProductNameOptions("");
+    refreshSpecificationSuggestions();
+  });
+  brandInput.addEventListener("change", function () {
+    configureBrandInput();
+    populateProductNameOptions("");
+    populateSpecificationFields({});
+    refreshSpecificationSuggestions();
+  });
+  brandCustomInput.addEventListener("input", function () {
+    populateProductNameOptions("");
+    populateSpecificationFields({});
+    refreshSpecificationSuggestions();
+  });
+  productNameSelect.addEventListener("change", function () {
+    if (productNameSelect.value === customChoice) {
+      productNameInput.value = "";
+    }
+    configureProductNameInput();
+    var product = findSelectedCatalogProduct();
+    populateSpecificationFields(product ? product.specifications : {});
+    refreshSpecificationSuggestions();
+  });
+  productNameInput.addEventListener("input", refreshSpecificationSuggestions);
+  configureSpecificationSuggestions();
+
+  Array.prototype.forEach.call(form.querySelectorAll("[data-spec-key]"), function (input) {
+    input.addEventListener("focus", refreshSpecificationSuggestions);
   });
 
   offerImageInputs.forEach(function (input, index) {
@@ -1437,7 +1667,7 @@
       return;
     }
 
-    var name = form.elements.name.value.trim();
+    var name = selectedProductName();
     if (!name) {
       formError.textContent = "Enter a product name.";
       return;
