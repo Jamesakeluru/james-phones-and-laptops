@@ -106,7 +106,7 @@ h2 {
   width: 100%;
   overflow: hidden;
   background: #15745c;
-  color: FFEB3B;
+  color: FFD700;
 }
 
 .store-announcement-inner {
@@ -118,7 +118,7 @@ h2 {
 .store-announcement-message {
   width: max-content;
   margin: 0;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
   line-height: 1.45;
   animation: store-announcement-scroll 20s linear infinite;
