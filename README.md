@@ -4,7 +4,9 @@
 
 The storefront reads active products from Supabase. The admin page at `admin.html` requires a Supabase Auth account that is authorized in `public.admin_users`; product changes are protected by the database's row-level security policies.
 
-Admins can create, edit, publish, hide, and delete products; manage prices, stock, descriptions, category-specific specifications, and up to four photos; and set phone condition to Brand New, UK Used, or Fairly Used. Laptops are listed as Fairly Used. Product photos are stored in the Supabase `product-images` bucket. Unknown stock is kept unset rather than shown as zero, and blank specifications are omitted from customer listings.
+Admins can create, edit, publish, hide, and delete products; manage prices, stock, descriptions, category-specific specifications, and up to four photos; and set phone condition to Brand New, UK Used, or Fairly Used. The product form narrows brand choices by category and product-name choices by brand, then suggests specifications from matching inventory while allowing new values. Laptops are listed as Fairly Used. Product photos are stored in the Supabase `product-images` bucket. Unknown stock is kept unset rather than shown as zero, and blank specifications are omitted from customer listings.
+
+Public pages use the JM logo in `images/store-logo.jpg` and the generated `images/share-preview.png` for search and social link previews.
 
 Admins can also edit and show or hide a single store announcement. When enabled, it appears as a moving banner on public pages and is stored in the Supabase `store_announcement` table. Public pages also show a phone and laptop repair contact bar with call and WhatsApp links for 0558649860.
 

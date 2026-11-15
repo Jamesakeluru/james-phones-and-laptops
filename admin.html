@@ -308,8 +308,7 @@
         </div>
         <button class="close-button" id="close-dialog-button" type="button" aria-label="Close dialog">×</button>
       </div>
-      <label for="product-name">Product name</label>
-      <input id="product-name" name="name" type="text" maxlength="100" placeholder="e.g. iPhone 14 128GB" required />
+      <p class="product-step">1. Choose a category</p>
       <label for="product-category">Category</label>
       <select id="product-category" name="category" required>
         <option value="Phone">Phone</option>
@@ -317,6 +316,29 @@
         <option value="Accessory">Accessory</option>
         <option value="Other">Other</option>
       </select>
+
+      <p class="product-step">2. Choose a brand</p>
+      <label for="product-brand">Brand</label>
+      <select id="product-brand" required>
+        <option value="">Choose a category first</option>
+      </select>
+      <div id="product-brand-custom-wrap" hidden>
+        <label for="product-brand-custom">New brand name</label>
+        <input id="product-brand-custom" type="text" maxlength="80" autocomplete="off" />
+      </div>
+      <p class="field-hint product-choice-hint" id="product-brand-hint">Brand choices will match the selected category.</p>
+
+      <p class="product-step">3. Choose a product name</p>
+      <label for="product-name-select">Product name</label>
+      <select id="product-name-select" required disabled>
+        <option value="">Choose a brand first</option>
+      </select>
+      <div id="product-name-custom-wrap" hidden>
+        <label for="product-name">New product name</label>
+        <input id="product-name" name="name" type="text" maxlength="100" placeholder="e.g. iPhone 14 128GB" />
+      </div>
+      <p class="field-hint product-choice-hint" id="product-name-hint">Product names narrow to the selected category and brand. Choose the new-name option if needed.</p>
+
       <label for="product-condition">Condition</label>
       <select id="product-condition" name="product_condition" required>
         <option value="">Choose condition</option>
@@ -327,12 +349,12 @@
       <p class="field-hint condition-hint" id="condition-hint">Choose the condition shown to customers.</p>
       <label for="product-description">Short description <span class="field-hint">(Optional)</span></label>
       <textarea id="product-description" name="description" rows="3" maxlength="500" placeholder="A short overview for the product card"></textarea>
+      <p class="product-step">4. Add specifications</p>
       <fieldset class="specification-group" data-spec-category="Phone">
         <legend>Phone specifications</legend>
-        <p class="field-hint">Enter only the details you have confirmed.</p>
+        <p class="field-hint">Suggestions narrow to the selected item. You can type another confirmed value.</p>
         <div class="specification-grid">
           <label>Region<input type="text" data-spec-key="Region" /></label>
-          <label>Brand<input type="text" data-spec-key="Brand" /></label>
           <label>Model<input type="text" data-spec-key="Model" /></label>
           <label>Storage capacity<input type="text" data-spec-key="Storage capacity" /></label>
           <label>Storage type<input type="text" data-spec-key="Storage type" /></label>
@@ -346,10 +368,9 @@
       </fieldset>
       <fieldset class="specification-group" data-spec-category="Laptop" hidden>
         <legend>Laptop specifications</legend>
-        <p class="field-hint">Enter only the details you have confirmed.</p>
+        <p class="field-hint">Suggestions narrow to the selected item. You can type another confirmed value.</p>
         <div class="specification-grid">
           <label>Region<input type="text" data-spec-key="Region" /></label>
-          <label>Brand<input type="text" data-spec-key="Brand" /></label>
           <label>Type<input type="text" data-spec-key="Type" /></label>
           <label>Processor<input type="text" data-spec-key="Processor" /></label>
           <label>Processor generation<input type="text" data-spec-key="Processor generation" /></label>
@@ -370,10 +391,9 @@
       </fieldset>
       <fieldset class="specification-group" data-spec-category="Other" hidden>
         <legend>Product specifications</legend>
-        <p class="field-hint">Enter only the details you have confirmed.</p>
+        <p class="field-hint">Suggestions narrow to the selected item. You can type another confirmed value.</p>
         <div class="specification-grid">
           <label>Region<input type="text" data-spec-key="Region" /></label>
-          <label>Brand<input type="text" data-spec-key="Brand" /></label>
           <label>Model<input type="text" data-spec-key="Model" /></label>
           <label>Type<input type="text" data-spec-key="Type" /></label>
           <label>Compatibility<input type="text" data-spec-key="Compatibility" /></label>
