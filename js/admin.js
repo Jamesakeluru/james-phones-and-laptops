@@ -12,6 +12,7 @@
   var adminIdleTimeout = null;
   var retainedImageUrls = [];
   var selectedImageFiles = [];
+  var bulkDrafts = [];
   var offerImageUrls = [null, null, null];
   var selectedOfferImageFiles = [null, null, null];
   var offerImageRemovalPending = [false, false, false];
@@ -29,6 +30,15 @@
   var dialog = document.getElementById("product-dialog");
   var form = document.getElementById("product-form");
   var formError = document.getElementById("form-error");
+  var bulkDialog = document.getElementById("bulk-dialog");
+  var bulkForm = document.getElementById("bulk-form");
+  var bulkProductList = document.getElementById("bulk-product-list");
+  var bulkStatus = document.getElementById("bulk-status");
+  var bulkCount = document.getElementById("bulk-count");
+  var bulkFormError = document.getElementById("bulk-form-error");
+  var bulkSaveButton = document.getElementById("bulk-save-button");
+  var bulkAdjustmentTarget = document.getElementById("bulk-adjustment-target");
+  var bulkAdjustmentPercent = document.getElementById("bulk-adjustment-percent");
   var notice = document.getElementById("database-notice");
   var categoryInput = document.getElementById("product-category");
   var brandInput = document.getElementById("product-brand");
@@ -889,6 +899,12 @@
     images.forEach(function (item, index) {
       var preview = document.createElement("div");
       preview.className = "image-preview";
+      var imageLink = document.createElement("a");
+      imageLink.className = "image-preview-link";
+      imageLink.href = item.url;
+      imageLink.target = "_blank";
+      imageLink.rel = "noopener noreferrer";
+      imageLink.setAttribute("aria-label", "Open product photo " + (index + 1) + " at original size");
       var image = document.createElement("img");
       image.src = item.url;
       image.alt = "Product photo " + (index + 1);
@@ -899,7 +915,8 @@
       removeButton.dataset.imageIndex = String(item.index);
       removeButton.setAttribute("aria-label", "Remove product photo " + (index + 1));
       removeButton.textContent = "×";
-      preview.appendChild(image);
+      imageLink.appendChild(image);
+      preview.appendChild(imageLink);
       preview.appendChild(removeButton);
       imagePreviewList.appendChild(preview);
     });
@@ -995,6 +1012,291 @@
       await removeStoredImages(imageUrls);
     } catch (error) {
       console.error("Could not remove images uploaded for an unsuccessful product save.", error);
+    }
+  }
+
+  function bulkDraftHasImageChanges(draft) {
+    if (draft.entries.length !== draft.originalImages.length) {
+      return true;
+    }
+    return draft.entries.some(function (entry, index) {
+      return entry.kind !== "existing" || entry.url !== draft.originalImages[index];
+    });
+  }
+
+  function bulkDraftHasChanges(draft) {
+    var priceValue = String(draft.priceValue).trim();
+    return !priceValue || Number(priceValue) !== Number(draft.product.price) ||
+      bulkDraftHasImageChanges(draft);
+  }
+
+  function updateBulkCount() {
+    var changedCount = bulkDrafts.filter(bulkDraftHasChanges).length;
+    bulkCount.textContent = changedCount + (changedCount === 1 ? " item has" : " items have") + " staged changes.";
+  }
+
+  function renderBulkDraft(draft) {
+    var row = document.createElement("article");
+    row.className = "bulk-product-row";
+    row.dataset.bulkProductId = draft.product.id;
+
+    var info = document.createElement("div");
+    info.className = "bulk-product-info";
+    var name = document.createElement("strong");
+    name.textContent = draft.product.name;
+    var category = document.createElement("span");
+    category.textContent = draft.product.category +
+      (draft.product.product_condition ? " · " + draft.product.product_condition : "");
+    info.appendChild(name);
+    info.appendChild(category);
+    row.appendChild(info);
+
+    var priceField = document.createElement("div");
+    priceField.className = "bulk-price-field";
+    var priceLabel = document.createElement("label");
+    priceLabel.textContent = "Price (GH₵)";
+    var priceInput = document.createElement("input");
+    priceInput.type = "number";
+    priceInput.min = "0";
+    priceInput.step = "0.01";
+    priceInput.inputMode = "decimal";
+    priceInput.required = true;
+    priceInput.value = draft.priceValue;
+    priceInput.dataset.bulkPriceId = draft.product.id;
+    priceLabel.appendChild(priceInput);
+    priceField.appendChild(priceLabel);
+    row.appendChild(priceField);
+
+    var imageEditor = document.createElement("div");
+    imageEditor.className = "bulk-image-editor";
+    var imageList = document.createElement("div");
+    imageList.className = "bulk-image-list";
+    if (draft.entries.length) {
+      draft.entries.forEach(function (entry, index) {
+        var imageBox = document.createElement("div");
+        imageBox.className = "bulk-image";
+        var link = document.createElement("a");
+        link.href = entry.kind === "new" ? entry.previewUrl : entry.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.setAttribute("aria-label", "Open " + draft.product.name + " photo " + (index + 1));
+        var image = document.createElement("img");
+        image.src = entry.kind === "new" ? entry.previewUrl : entry.url;
+        image.alt = draft.product.name + " photo " + (index + 1);
+        image.loading = "lazy";
+        var removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "image-remove-button";
+        removeButton.dataset.bulkRemoveId = draft.product.id;
+        removeButton.dataset.bulkImageIndex = String(index);
+        removeButton.setAttribute("aria-label", "Remove photo " + (index + 1) + " from " + draft.product.name);
+        removeButton.textContent = "×";
+        link.appendChild(image);
+        imageBox.appendChild(link);
+        imageBox.appendChild(removeButton);
+        imageList.appendChild(imageBox);
+      });
+    } else {
+      var noImages = document.createElement("span");
+      noImages.className = "field-hint";
+      noImages.textContent = "No photos selected.";
+      imageList.appendChild(noImages);
+    }
+    imageEditor.appendChild(imageList);
+    if (draft.entries.length) {
+      var removeAllButton = document.createElement("button");
+      removeAllButton.type = "button";
+      removeAllButton.className = "secondary-button bulk-remove-all";
+      removeAllButton.dataset.bulkRemoveAllId = draft.product.id;
+      removeAllButton.textContent = "Remove all photos";
+      imageEditor.appendChild(removeAllButton);
+    }
+    var addPhotos = document.createElement("label");
+    addPhotos.className = "bulk-image-add";
+    addPhotos.appendChild(document.createTextNode(
+      "Add photos (" + (maxImageCount - draft.entries.length) + " slot" +
+      (maxImageCount - draft.entries.length === 1 ? "" : "s") + " available)"
+    ));
+    var fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = allowedImageTypes.join(",");
+    fileInput.multiple = true;
+    fileInput.disabled = draft.entries.length >= maxImageCount;
+    fileInput.dataset.bulkFilesId = draft.product.id;
+    addPhotos.appendChild(fileInput);
+    imageEditor.appendChild(addPhotos);
+    row.appendChild(imageEditor);
+
+    if (draft.error) {
+      var error = document.createElement("p");
+      error.className = "bulk-row-error";
+      error.textContent = draft.error;
+      row.appendChild(error);
+    }
+    return row;
+  }
+
+  function renderBulkEditor() {
+    bulkProductList.replaceChildren();
+    bulkDrafts.forEach(function (draft) {
+      bulkProductList.appendChild(renderBulkDraft(draft));
+    });
+    updateBulkCount();
+  }
+
+  function clearBulkDrafts() {
+    bulkDrafts.forEach(function (draft) {
+      draft.entries.forEach(function (entry) {
+        if (entry.kind === "new") {
+          URL.revokeObjectURL(entry.previewUrl);
+        }
+      });
+    });
+    bulkDrafts = [];
+    bulkProductList.replaceChildren();
+  }
+
+  function openBulkEditor() {
+    clearBulkDrafts();
+    bulkDrafts = products.map(function (product) {
+      var images = productImageUrls(product);
+      return {
+        product: product,
+        priceValue: String(product.price),
+        originalImages: images.slice(),
+        entries: images.map(function (url) {
+          return { kind: "existing", url: url };
+        }),
+        error: ""
+      };
+    });
+    bulkStatus.classList.remove("error");
+    bulkStatus.textContent = "";
+    bulkFormError.textContent = "";
+    bulkAdjustmentPercent.value = "";
+    renderBulkEditor();
+    bulkDialog.showModal();
+  }
+
+  function matchesBulkAdjustment(product, target) {
+    var category = String(product.category || "").toLocaleLowerCase();
+    var condition = String(product.product_condition || "").toLocaleLowerCase();
+    if (target === "new-phones") {
+      return category === "phone" && (condition === "brand new" || condition === "new");
+    }
+    if (target === "used-phones") {
+      return category === "phone" &&
+        (condition === "uk used" || condition === "fairly used" || condition === "used");
+    }
+    return (target === "tablets" && category === "tablet") ||
+      (target === "laptops" && category === "laptop");
+  }
+
+  function applyBulkAdjustment() {
+    bulkFormError.textContent = "";
+    var percentage = Number(bulkAdjustmentPercent.value);
+    if (bulkAdjustmentPercent.value === "" || !Number.isFinite(percentage) || percentage < -100) {
+      bulkFormError.textContent = "Enter a valid percentage change of -100% or greater.";
+      return;
+    }
+    var target = bulkAdjustmentTarget.value;
+    var matchingDrafts = bulkDrafts.filter(function (draft) {
+      return matchesBulkAdjustment(draft.product, target);
+    });
+    if (!matchingDrafts.length) {
+      bulkStatus.classList.remove("error");
+      bulkStatus.textContent = "No products match this adjustment target.";
+      return;
+    }
+    for (var index = 0; index < matchingDrafts.length; index += 1) {
+      var draft = matchingDrafts[index];
+      var price = Number(draft.priceValue);
+      if (!Number.isFinite(price) || price < 0) {
+        bulkFormError.textContent = "Fix invalid prices in the selected products before applying a percentage.";
+        return;
+      }
+    }
+    matchingDrafts.forEach(function (draft) {
+      var price = Number(draft.priceValue);
+      draft.priceValue = (Math.round((price * (1 + percentage / 100) + Number.EPSILON) * 100) / 100).toFixed(2);
+      draft.error = "";
+    });
+    bulkStatus.classList.remove("error");
+    bulkStatus.textContent = percentage + "% applied to " + matchingDrafts.length +
+      (matchingDrafts.length === 1 ? " matching product." : " matching products.") +
+      " You can still edit each price before saving.";
+    renderBulkEditor();
+  }
+
+  async function saveBulkDraft(draft) {
+    var uploadedUrls = [];
+    var imageUrls = [];
+    var price = Number(draft.priceValue);
+    var priceChanged = price !== Number(draft.product.price);
+    var imagesChanged = bulkDraftHasImageChanges(draft);
+    try {
+      if (imagesChanged) {
+        if (draft.entries.some(function (entry) { return entry.kind === "new"; }) && !adminUserId) {
+          throw new Error("Your admin session expired. Sign in again before uploading photos.");
+        }
+        for (var index = 0; index < draft.entries.length; index += 1) {
+          var entry = draft.entries[index];
+          if (entry.kind === "existing") {
+            imageUrls.push(entry.url);
+            continue;
+          }
+          var path = makeImagePath(entry.file);
+          var uploadResult = await client.storage.from(imageBucket).upload(path, entry.file, {
+            contentType: entry.file.type,
+            upsert: false
+          });
+          if (uploadResult.error) {
+            throw uploadResult.error;
+          }
+          var publicUrl = client.storage.from(imageBucket).getPublicUrl(path).data.publicUrl;
+          uploadedUrls.push(publicUrl);
+          imageUrls.push(publicUrl);
+        }
+      }
+
+      var update = {};
+      if (priceChanged) {
+        update.price = price;
+      }
+      if (imagesChanged) {
+        update.images = imageUrls;
+        update.image_url = imageUrls.length ? imageUrls[0] : "";
+      }
+      var result = await client.from("products").update(update).eq("id", draft.product.id).select("id").single();
+      if (result.error) {
+        throw result.error;
+      }
+
+      if (priceChanged) {
+        draft.product.price = price;
+      }
+      if (imagesChanged) {
+        draft.product.images = imageUrls;
+        draft.product.image_url = imageUrls.length ? imageUrls[0] : "";
+      }
+      var removedImages = imagesChanged
+        ? draft.originalImages.filter(function (url) {
+          return imageUrls.indexOf(url) === -1;
+        })
+        : [];
+      var warning = "";
+      if (removedImages.length) {
+        try {
+          await removeStoredImages(removedImages);
+        } catch (error) {
+          console.error("Product changes were saved, but removed product photos could not be deleted.", error);
+          warning = "Some removed photos could not be deleted from storage.";
+        }
+      }
+      return { success: true, warning: warning };
+    } catch (error) {
+      await discardUploadedImages(uploadedUrls);
+      return { success: false, error: error.message || "Check your connection and try again." };
     }
   }
 
@@ -1209,6 +1511,9 @@
     client.auth.onAuthStateChange(function (event, session) {
       if (event === "SIGNED_OUT") {
         clearAdminIdleTimeout();
+        if (bulkDialog.open) {
+          bulkDialog.close();
+        }
         products = [];
         blogPosts = [];
         testimonials = [];
@@ -1728,6 +2033,221 @@
       }
     }
     renderImagePreviews();
+  });
+
+  document.getElementById("edit-all-products-button").addEventListener("click", openBulkEditor);
+  document.getElementById("bulk-close-button").addEventListener("click", function () {
+    bulkDialog.close();
+  });
+  document.getElementById("bulk-cancel-button").addEventListener("click", function () {
+    bulkDialog.close();
+  });
+  document.getElementById("apply-bulk-adjustment").addEventListener("click", applyBulkAdjustment);
+  bulkDialog.addEventListener("close", clearBulkDrafts);
+
+  bulkProductList.addEventListener("input", function (event) {
+    var input = event.target.closest("input[data-bulk-price-id]");
+    if (!input) {
+      return;
+    }
+    var draft = bulkDrafts.find(function (item) {
+      return item.product.id === input.dataset.bulkPriceId;
+    });
+    if (draft) {
+      draft.priceValue = input.value;
+      draft.error = "";
+      bulkFormError.textContent = "";
+      updateBulkCount();
+    }
+  });
+
+  bulkProductList.addEventListener("change", function (event) {
+    var input = event.target.closest("input[data-bulk-files-id]");
+    if (!input) {
+      return;
+    }
+    var draft = bulkDrafts.find(function (item) {
+      return item.product.id === input.dataset.bulkFilesId;
+    });
+    if (!draft) {
+      return;
+    }
+    var files = Array.prototype.slice.call(input.files || []);
+    var availableSlots = maxImageCount - draft.entries.length;
+    var invalidFile = files.find(function (file) {
+      return allowedImageTypes.indexOf(file.type) === -1 || file.size > maxImageSize;
+    });
+    if (files.length > availableSlots) {
+      draft.error = "A product can have up to " + maxImageCount + " photos. Remove a photo before adding another.";
+    } else if (invalidFile) {
+      draft.error = "Use JPEG, PNG, WebP, or AVIF images no larger than 5 MB each.";
+    } else {
+      draft.error = "";
+      files.forEach(function (file) {
+        draft.entries.push({
+          kind: "new",
+          file: file,
+          previewUrl: URL.createObjectURL(file)
+        });
+      });
+    }
+    input.value = "";
+    var row = input.closest(".bulk-product-row");
+    row.replaceWith(renderBulkDraft(draft));
+    updateBulkCount();
+  });
+
+  bulkProductList.addEventListener("click", function (event) {
+    var removeAllButton = event.target.closest("button[data-bulk-remove-all-id]");
+    if (removeAllButton) {
+      var allDraft = bulkDrafts.find(function (item) {
+        return item.product.id === removeAllButton.dataset.bulkRemoveAllId;
+      });
+      if (allDraft) {
+        allDraft.entries.forEach(function (entry) {
+          if (entry.kind === "new") {
+            URL.revokeObjectURL(entry.previewUrl);
+          }
+        });
+        allDraft.entries = [];
+        allDraft.error = "";
+        removeAllButton.closest(".bulk-product-row").replaceWith(renderBulkDraft(allDraft));
+        updateBulkCount();
+      }
+      return;
+    }
+    var button = event.target.closest("button[data-bulk-remove-id]");
+    if (!button) {
+      return;
+    }
+    var draft = bulkDrafts.find(function (item) {
+      return item.product.id === button.dataset.bulkRemoveId;
+    });
+    if (!draft) {
+      return;
+    }
+    var index = Number(button.dataset.bulkImageIndex);
+    var removed = draft.entries.splice(index, 1)[0];
+    if (removed && removed.kind === "new") {
+      URL.revokeObjectURL(removed.previewUrl);
+    }
+    draft.error = "";
+    button.closest(".bulk-product-row").replaceWith(renderBulkDraft(draft));
+    updateBulkCount();
+  });
+
+  bulkForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    bulkFormError.textContent = "";
+    var changedDrafts = bulkDrafts.filter(bulkDraftHasChanges);
+    var invalidDrafts = changedDrafts.filter(function (draft) {
+      var price = Number(draft.priceValue);
+      return draft.priceValue === "" || !Number.isFinite(price) || price < 0;
+    });
+    if (invalidDrafts.length) {
+      invalidDrafts.forEach(function (draft) {
+        draft.error = "Enter a valid price of zero or more.";
+      });
+      renderBulkEditor();
+      bulkFormError.textContent = "Correct the highlighted prices before saving.";
+      return;
+    }
+    if (!changedDrafts.length) {
+      bulkStatus.classList.remove("error");
+      bulkStatus.textContent = "There are no staged changes to save.";
+      return;
+    }
+
+    bulkForm.querySelectorAll("input, select, button").forEach(function (control) {
+      control.disabled = true;
+    });
+    bulkSaveButton.textContent = "Saving...";
+    bulkStatus.classList.remove("error");
+    bulkFormError.textContent = "";
+    var completed = 0;
+    var successes = [];
+    var failures = [];
+    var warnings = [];
+    var nextIndex = 0;
+    async function saveNextDraft() {
+      while (nextIndex < changedDrafts.length) {
+        var draft = changedDrafts[nextIndex];
+        nextIndex += 1;
+        var result = await saveBulkDraft(draft);
+        completed += 1;
+        if (result.success) {
+          successes.push(draft);
+          if (result.warning) {
+            warnings.push(draft.product.name + ": " + result.warning);
+          }
+        } else {
+          draft.error = result.error;
+          failures.push(draft.product.name + ": " + result.error);
+        }
+        bulkStatus.textContent = "Saved or attempted " + completed + " of " + changedDrafts.length + " changed items...";
+      }
+    }
+
+    try {
+      var workerCount = Math.min(4, changedDrafts.length);
+      var workers = [];
+      for (var worker = 0; worker < workerCount; worker += 1) {
+        workers.push(saveNextDraft());
+      }
+      await Promise.all(workers);
+      if (successes.length) {
+        await loadProducts();
+        successes.forEach(function (draft) {
+          var product = products.find(function (item) {
+            return item.id === draft.product.id;
+          }) || draft.product;
+          draft.entries.forEach(function (entry) {
+            if (entry.kind === "new") {
+              URL.revokeObjectURL(entry.previewUrl);
+            }
+          });
+          draft.product = product;
+          draft.priceValue = String(product.price);
+          draft.originalImages = productImageUrls(product);
+          draft.entries = draft.originalImages.map(function (url) {
+            return { kind: "existing", url: url };
+          });
+          draft.error = "";
+        });
+      }
+
+      if (failures.length) {
+        renderBulkEditor();
+        bulkStatus.classList.add("error");
+        bulkStatus.textContent = "Saved " + successes.length + " of " + changedDrafts.length +
+          " changed items; " + failures.length + " failed. Successful changes are already published.";
+        if (warnings.length) {
+          bulkStatus.textContent += " " + warnings.join(" ");
+        }
+        var failureDetails = failures.slice(0, 5).join(" ");
+        if (failures.length > 5) {
+          failureDetails += " " + (failures.length - 5) + " more failed items are highlighted below.";
+        }
+        bulkFormError.textContent = failureDetails;
+      } else {
+        var message = "Saved changes for " + successes.length +
+          (successes.length === 1 ? " product." : " products.");
+        if (warnings.length) {
+          message += " " + warnings.join(" ");
+        }
+        bulkDialog.close();
+        setNotice(message, warnings.length > 0);
+      }
+    } catch (error) {
+      console.error("Could not complete the batch product update.", error);
+      bulkStatus.classList.add("error");
+      bulkStatus.textContent = "Could not complete the batch update. " + (error.message || "Try again.");
+    } finally {
+      bulkForm.querySelectorAll("input, select, button").forEach(function (control) {
+        control.disabled = false;
+      });
+      bulkSaveButton.textContent = "Save all changes";
+    }
   });
 
   list.addEventListener("click", async function (event) {

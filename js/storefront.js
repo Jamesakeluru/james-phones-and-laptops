@@ -8,18 +8,41 @@
   var productControls = document.getElementById("managed-product-controls");
   var productSearch = document.getElementById("managed-product-search");
   var categoryList = document.getElementById("managed-category-list");
+  var conditionFilter = document.getElementById("managed-condition-filter");
+  var minimumPriceFilter = document.getElementById("managed-min-price");
+  var maximumPriceFilter = document.getElementById("managed-max-price");
+  var priceSort = document.getElementById("managed-price-sort");
   var resultsCount = document.getElementById("managed-results-count");
   var noResults = document.getElementById("managed-no-results");
+  var stickyCheckout = document.getElementById("managed-sticky-checkout");
+  var stickyCheckoutCount = document.getElementById("managed-sticky-checkout-count");
+  var pageScrollControls = document.getElementById("managed-scroll-controls");
+  var scrollTopButton = document.getElementById("managed-scroll-top");
+  var scrollBottomButton = document.getElementById("managed-scroll-bottom");
   var productImageDialog = document.getElementById("product-image-dialog");
   var productImageDialogImage = document.getElementById("product-image-dialog-img");
+  var productImageDialogOriginal = document.getElementById("product-image-dialog-original");
   var cartStorageKey = "james-phones-cart-v1";
   var products = [];
   var selectedCategory = "";
+
+  function matchesConditionFilter(product) {
+    var condition = String(product.product_condition || "").trim().toLocaleLowerCase();
+    if (conditionFilter.value === "new") {
+      return condition === "brand new" || condition === "new";
+    }
+    if (conditionFilter.value === "used") {
+      return condition === "uk used" || condition === "fairly used" || condition === "used";
+    }
+    return true;
+  }
 
   function showUnavailable() {
     section.hidden = false;
     status.classList.add("error");
     status.textContent = "Live inventory is temporarily unavailable. Please contact us to check availability.";
+    updatePageScrollControls();
+    scrollToRequestedInventory();
   }
 
   function getSpecificationEntries(value) {
@@ -114,12 +137,35 @@
   function renderFilteredProducts() {
     var searchTerm = productSearch.value.trim().toLocaleLowerCase();
     var categoryTerm = selectedCategory.toLocaleLowerCase();
+    var minimumPrice = minimumPriceFilter.value === "" ? null : Number(minimumPriceFilter.value);
+    var maximumPrice = maximumPriceFilter.value === "" ? null : Number(maximumPriceFilter.value);
     var filteredProducts = products.filter(function (product) {
       var matchesSearch = !searchTerm || getSearchableText(product).indexOf(searchTerm) !== -1;
       var matchesCategory = !categoryTerm ||
         String(product.category || "").trim().toLocaleLowerCase() === categoryTerm;
-      return matchesSearch && matchesCategory;
+      var price = Number(product.price);
+      var matchesMinimum = minimumPrice === null || (Number.isFinite(price) && price >= minimumPrice);
+      var matchesMaximum = maximumPrice === null || (Number.isFinite(price) && price <= maximumPrice);
+      return matchesSearch && matchesCategory && matchesConditionFilter(product) &&
+        matchesMinimum && matchesMaximum;
     });
+
+    if (priceSort.value === "low-high" || priceSort.value === "high-low") {
+      var sortDirection = priceSort.value === "low-high" ? 1 : -1;
+      filteredProducts.sort(function (first, second) {
+        var firstPrice = Number(first.price);
+        var secondPrice = Number(second.price);
+        var firstHasPrice = Number.isFinite(firstPrice);
+        var secondHasPrice = Number.isFinite(secondPrice);
+        if (firstHasPrice !== secondHasPrice) {
+          return firstHasPrice ? -1 : 1;
+        }
+        if (firstHasPrice && firstPrice !== secondPrice) {
+          return (firstPrice - secondPrice) * sortDirection;
+        }
+        return products.indexOf(first) - products.indexOf(second);
+      });
+    }
 
     productsContainer.textContent = "";
     filteredProducts.forEach(function (product) {
@@ -127,6 +173,7 @@
     });
     resultsCount.textContent = "Showing " + filteredProducts.length + " of " + products.length + " products";
     noResults.hidden = filteredProducts.length !== 0;
+    window.requestAnimationFrame(updatePageScrollControls);
   }
 
   function safeImageUrl(value) {
@@ -207,13 +254,47 @@
         return total + item.quantity;
       }, 0);
       cartCount.textContent = String(quantity);
+      stickyCheckoutCount.textContent = quantity + (quantity === 1 ? " item" : " items") + " in your order";
+      stickyCheckout.hidden = quantity === 0;
+      document.body.classList.toggle("has-managed-sticky-checkout", quantity > 0);
+      updatePageScrollControls();
       return true;
     } catch (error) {
       console.error("Could not read the saved order.", error);
       cartCount.textContent = "!";
+      stickyCheckout.hidden = true;
+      document.body.classList.remove("has-managed-sticky-checkout");
       status.classList.add("error");
       status.textContent = "Your saved order could not be read. Open the order page to review it.";
       return false;
+    }
+  }
+
+  function updatePageScrollControls() {
+    if (!pageScrollControls) {
+      return;
+    }
+    var pageHeight = document.documentElement.scrollHeight;
+    var canScroll = pageHeight > window.innerHeight + 120;
+    pageScrollControls.hidden = section.hidden || !canScroll;
+    if (!canScroll || section.hidden) {
+      return;
+    }
+    scrollTopButton.hidden = window.scrollY < 180;
+    scrollBottomButton.hidden = window.scrollY + window.innerHeight >= pageHeight - 120;
+  }
+
+  function scrollBehavior() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "auto"
+      : "smooth";
+  }
+
+  function scrollToRequestedInventory() {
+    if (window.location.hash === "#managed-inventory") {
+      window.requestAnimationFrame(function () {
+        section.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
+      });
     }
   }
 
@@ -251,14 +332,14 @@
         throw new Error("Your order was saved, but the order summary could not be updated. Open the order page to check it.");
       }
       status.classList.remove("error");
-      status.textContent = "Added " + product.name + " to your order. Review your order to send it on WhatsApp.";
+      status.textContent = "Added " + product.name + " to your order. Checkout is available at the bottom of the screen.";
       feedback.classList.remove("error");
       var orderQuantity = cart.reduce(function (total, item) {
         return total + item.quantity;
       }, 0);
       feedback.textContent = product.name + " added to your order. You now have " +
         orderQuantity + (orderQuantity === 1 ? " item" : " items") +
-        ". Review your order above to continue.";
+        ". Use the Checkout button at the bottom to continue.";
       addButton.textContent = "Added to order";
       addButton.classList.add("is-added");
       window.setTimeout(function () {
@@ -304,10 +385,23 @@
         image.src = imageUrl;
         image.alt = product.name + " photo " + (index + 1);
         image.loading = "lazy";
-        image.addEventListener("click", function () {
+        image.tabIndex = 0;
+        image.setAttribute("role", "button");
+        image.setAttribute("aria-label", "View full-resolution photo " + (index + 1) + " of " + product.name);
+        image.title = "View full-resolution photo";
+        function showFullSizePhoto(event) {
+          event.preventDefault();
+          event.stopPropagation();
           productImageDialogImage.src = imageUrl;
           productImageDialogImage.alt = image.alt;
+          productImageDialogOriginal.href = imageUrl;
           productImageDialog.showModal();
+        }
+        image.addEventListener("click", showFullSizePhoto);
+        image.addEventListener("keydown", function (event) {
+          if (event.key === "Enter" || event.key === " ") {
+            showFullSizePhoto(event);
+          }
         });
         image.addEventListener("error", function () {
           image.hidden = true;
@@ -340,16 +434,24 @@
           gallery.style.transform = "translateX(-" + (currentIndex * 100) + "%)";
           photoCount.textContent = (currentIndex + 1) + " / " + imageUrls.length;
         }
-        previous.addEventListener("click", function () {
+        previous.addEventListener("click", function (event) {
+          event.preventDefault();
+          event.stopPropagation();
           moveGallery(-1);
         });
-        next.addEventListener("click", function () {
+        next.addEventListener("click", function (event) {
+          event.preventDefault();
+          event.stopPropagation();
           moveGallery(1);
         });
         imageBox.appendChild(previous);
         imageBox.appendChild(next);
         imageBox.appendChild(photoCount);
       }
+      var imageHint = document.createElement("span");
+      imageHint.className = "managed-image-hint";
+      imageHint.textContent = "Tap photo to view original size";
+      imageBox.appendChild(imageHint);
     }
     imageBox.appendChild(placeholder);
 
@@ -457,6 +559,15 @@
   document.getElementById("product-image-dialog-close").addEventListener("click", function () {
     productImageDialog.close();
   });
+  scrollTopButton.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: scrollBehavior() });
+  });
+  scrollBottomButton.addEventListener("click", function () {
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: scrollBehavior() });
+  });
+  window.addEventListener("scroll", updatePageScrollControls, { passive: true });
+  window.addEventListener("resize", updatePageScrollControls);
+  window.addEventListener("pageshow", scrollToRequestedInventory);
   productImageDialog.addEventListener("click", function (event) {
     if (event.target === productImageDialog) {
       productImageDialog.close();
@@ -479,6 +590,11 @@
         window.JAMES_PHONES_PUBLIC_CLIENT = client;
       }
       updateCartCount();
+      productSearch.addEventListener("input", renderFilteredProducts);
+      conditionFilter.addEventListener("change", renderFilteredProducts);
+      minimumPriceFilter.addEventListener("input", renderFilteredProducts);
+      maximumPriceFilter.addEventListener("input", renderFilteredProducts);
+      priceSort.addEventListener("change", renderFilteredProducts);
       var result = await client
         .from("products")
         .select("id, name, category, description, product_condition, specifications, price, currency, image_url, images, stock")
@@ -491,16 +607,16 @@
       }
       if (!result.data || result.data.length === 0) {
         products = [];
-        productSearch.addEventListener("input", renderFilteredProducts);
         productControls.hidden = false;
         renderCategoryFilters();
         status.textContent = "No products are currently available.";
         section.hidden = false;
+        updatePageScrollControls();
+        scrollToRequestedInventory();
         return;
       }
 
       products = result.data;
-      productSearch.addEventListener("input", renderFilteredProducts);
       productControls.hidden = false;
       renderCategoryFilters();
       renderFilteredProducts();
@@ -508,6 +624,8 @@
         status.textContent = "";
       }
       section.hidden = false;
+      updatePageScrollControls();
+      scrollToRequestedInventory();
     } catch (error) {
       console.error("Could not connect to live inventory.", error);
       showUnavailable();

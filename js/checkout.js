@@ -15,6 +15,10 @@
   var orderError = document.getElementById("order-error");
   var sendButton = document.getElementById("send-order-button");
   var cartTotal = document.getElementById("cart-total");
+  var stickyAction = document.getElementById("checkout-sticky-action");
+  var stickyCount = document.getElementById("checkout-sticky-count");
+  var stickyTotal = document.getElementById("checkout-sticky-total");
+  var stickySendButton = document.getElementById("send-order-sticky-button");
   var fallbackLink = document.getElementById("whatsapp-fallback");
 
   function readCart() {
@@ -110,6 +114,9 @@
     cartMessage.textContent = error.message || "Could not read or update your order.";
     cartMessage.classList.add("checkout-error");
     sendButton.disabled = true;
+    stickySendButton.disabled = true;
+    stickyAction.hidden = true;
+    document.body.classList.remove("has-checkout-sticky-action");
   }
 
   function renderCart() {
@@ -138,6 +145,10 @@
       : "Your order is empty.";
     emptyCart.hidden = quantity > 0;
     sendButton.disabled = quantity === 0;
+    stickyCount.textContent = quantity + (quantity === 1 ? " item" : " items") + " in your order";
+    stickySendButton.disabled = quantity === 0;
+    stickyAction.hidden = quantity === 0;
+    document.body.classList.toggle("has-checkout-sticky-action", quantity > 0);
 
     var total = 0;
     cart.forEach(function (product) {
@@ -231,7 +242,9 @@
       cartList.appendChild(item);
     });
 
-    cartTotal.textContent = formatPrice(total, "GHS");
+    var formattedTotal = formatPrice(total, "GHS");
+    cartTotal.textContent = formattedTotal;
+    stickyTotal.textContent = formattedTotal;
   }
 
   orderForm.addEventListener("submit", function (event) {
