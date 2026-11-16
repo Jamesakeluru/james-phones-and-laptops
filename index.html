@@ -95,7 +95,7 @@
                 <a href="about.html">About</a>
                 <a href="shop.html">Shop</a>
                 <a href="blog.html">Blog</a>
-                <a href="payment.html">My order</a>
+                <a href="payment.html">Checkout</a>
               </div>
             </div>
           </div>
@@ -156,7 +156,7 @@
         <p class="managed-kicker">LIVE FROM OUR STORE</p>
         <h2>Current Inventory</h2>
         <p class="managed-status" id="managed-status" role="status" aria-live="polite"></p>
-        <a class="managed-cart-link" href="payment.html">Review your order (<span id="managed-cart-count">0</span>)</a>
+        <a class="managed-cart-link" href="payment.html">Checkout (<span id="managed-cart-count">0</span>)</a>
       </div>
       <div class="managed-product-controls" id="managed-product-controls" hidden>
         <div class="managed-search-field">
@@ -167,6 +167,28 @@
           <span class="managed-category-label">Browse categories</span>
           <div class="managed-category-list" id="managed-category-list" role="group" aria-label="Filter products by category"></div>
         </div>
+        <div class="managed-filter-field">
+          <label for="managed-condition-filter">Condition</label>
+          <select id="managed-condition-filter">
+            <option value="all">New and used</option>
+            <option value="new">New only</option>
+            <option value="used">Used only</option>
+          </select>
+        </div>
+        <div class="managed-price-range">
+          <label for="managed-min-price">Minimum price (GH₵)</label>
+          <input id="managed-min-price" type="number" min="0" step="0.01" inputmode="decimal" placeholder="No minimum">
+          <label for="managed-max-price">Maximum price (GH₵)</label>
+          <input id="managed-max-price" type="number" min="0" step="0.01" inputmode="decimal" placeholder="No maximum">
+        </div>
+        <div class="managed-filter-field managed-sort-field">
+          <label for="managed-price-sort">Sort by price</label>
+          <select id="managed-price-sort">
+            <option value="newest">Recently added</option>
+            <option value="low-high">Price: low to high</option>
+            <option value="high-low">Price: high to low</option>
+          </select>
+        </div>
       </div>
       <p class="managed-results-count" id="managed-results-count" aria-live="polite"></p>
       <p class="managed-no-results" id="managed-no-results" role="status" hidden>No products match your search and category. Try adjusting your filters.</p>
@@ -174,8 +196,24 @@
     </div>
   </section>
 
+  <div class="managed-sticky-checkout" id="managed-sticky-checkout" role="region" aria-label="Your order" hidden>
+    <div class="managed-sticky-checkout-copy">
+      <strong id="managed-sticky-checkout-count" aria-live="polite">0 items in your order</strong>
+      <span>Review your items and send your order on WhatsApp.</span>
+    </div>
+    <a class="managed-sticky-checkout-button" href="payment.html">Checkout</a>
+  </div>
+
+  <nav class="managed-scroll-controls" id="managed-scroll-controls" aria-label="Quick page navigation" hidden>
+    <button id="managed-scroll-top" type="button" aria-label="Back to top" title="Back to top">↑</button>
+    <button id="managed-scroll-bottom" type="button" aria-label="Go to bottom" title="Go to bottom">↓</button>
+  </nav>
+
   <dialog class="product-image-dialog" id="product-image-dialog" aria-label="Full-size product photo">
-    <button class="product-image-dialog-close" id="product-image-dialog-close" type="button" aria-label="Close full-size photo">×</button>
+    <div class="product-image-dialog-toolbar">
+      <a class="product-image-dialog-original" id="product-image-dialog-original" href="#" target="_blank" rel="noopener noreferrer">Open original image</a>
+      <button class="product-image-dialog-close" id="product-image-dialog-close" type="button" aria-label="Close full-size photo">×</button>
+    </div>
     <img id="product-image-dialog-img" alt="" />
   </dialog>
 
