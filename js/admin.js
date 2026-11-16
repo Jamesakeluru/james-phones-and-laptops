@@ -9,6 +9,7 @@
   var editingTestimonialId = null;
   var client = null;
   var adminUserId = null;
+  var adminIdleTimeout = null;
   var retainedImageUrls = [];
   var selectedImageFiles = [];
   var offerImageUrls = [null, null, null];
@@ -97,22 +98,119 @@
   var allowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/avif"];
   var customChoice = "__custom__";
   var noBrandChoice = "__none__";
-  var commonSpecificationSuggestions = {
+  var predefinedProductCatalog = {
     Phone: {
-      "Storage capacity": ["64GB", "128GB", "256GB", "512GB", "1TB", "2TB"],
-      "SIM configuration": ["Single SIM", "Dual SIM", "eSIM", "Physical SIM + eSIM"]
+      Apple: [
+        "iPhone 11", "iPhone 11 Pro", "iPhone 11 Pro Max",
+        "iPhone 12", "iPhone 12 mini", "iPhone 12 Pro", "iPhone 12 Pro Max",
+        "iPhone 13", "iPhone 13 mini", "iPhone 13 Pro", "iPhone 13 Pro Max",
+        "iPhone 14", "iPhone 14 Plus", "iPhone 14 Pro", "iPhone 14 Pro Max",
+        "iPhone 15", "iPhone 15 Plus", "iPhone 15 Pro", "iPhone 15 Pro Max",
+        "iPhone 16", "iPhone 16 Plus", "iPhone 16 Pro", "iPhone 16 Pro Max",
+        "iPhone 17", "iPhone 17 Pro", "iPhone 17 Pro Max"
+      ],
+      Samsung: [
+        "Galaxy A05", "Galaxy A05s", "Galaxy A15", "Galaxy A25", "Galaxy A35",
+        "Galaxy A55", "Galaxy A56", "Galaxy S22", "Galaxy S22+", "Galaxy S22 Ultra",
+        "Galaxy S23", "Galaxy S23+", "Galaxy S23 Ultra", "Galaxy S24", "Galaxy S24+",
+        "Galaxy S24 Ultra", "Galaxy S25", "Galaxy S25+", "Galaxy S25 Ultra",
+        "Galaxy Z Flip6", "Galaxy Z Fold6"
+      ],
+      Tecno: [
+        "Spark 10", "Spark 20", "Spark 30", "Spark 40",
+        "Camon 20", "Camon 30", "Camon 40",
+        "Pova 5", "Pova 6", "Pova 7"
+      ],
+      Infinix: [
+        "Hot 30", "Hot 40", "Hot 50", "Hot 60",
+        "Note 30", "Note 40", "Note 50", "Note 60",
+        "Zero 30", "Zero 40"
+      ],
+      Xiaomi: [
+        "Redmi 12", "Redmi 13", "Redmi 14",
+        "Redmi Note 12", "Redmi Note 13", "Redmi Note 14", "Redmi Note 15",
+        "Redmi A3", "Redmi A5", "POCO X6", "POCO X7"
+      ],
+      Redmi: ["A7", "A7 Pro", "15C", "15"],
+      Google: ["Pixel 7", "Pixel 8 Pro", "Pixel 10 Pro XL"]
     },
     Laptop: {
-      "RAM": ["4GB", "8GB", "12GB", "16GB", "32GB", "64GB"],
+      HP: ["EliteBook 840", "EliteBook 850", "ProBook 440", "ProBook 450", "Pavilion 15", "Envy x360 14"],
+      Dell: ["Latitude 3420", "Latitude 5420", "Latitude 5430", "Latitude 5440", "Inspiron 15", "XPS 13"],
+      Lenovo: ["ThinkPad T14", "ThinkPad X1 Carbon", "IdeaPad 3", "IdeaPad 5", "Yoga 7"],
+      Apple: ["MacBook Air M1", "MacBook Air M2", "MacBook Air M3", "MacBook Air M4", "MacBook Pro 14-inch", "MacBook Pro 16-inch"],
+      ASUS: ["VivoBook 14", "VivoBook 15", "Zenbook 14", "ROG Zephyrus G14"]
+    },
+    Tablet: {
+      Samsung: ["Galaxy Tab A11", "Galaxy Tab A11+"],
+      HOMII: ["Kids 12", "Kids 17", "Kids 19", "Kids 20"],
+      itel: ["VistaTab 12"]
+    }
+  };
+  var commonSpecificationSuggestions = {
+    Phone: {
+      "RAM": ["3GB", "4GB", "6GB", "8GB", "12GB", "16GB"],
+      "Processor": ["Apple A-series", "MediaTek Helio", "MediaTek Dimensity", "Qualcomm Snapdragon", "Unisoc"],
+      "Storage capacity": ["64GB", "128GB", "256GB", "512GB", "1TB", "2TB"],
+      "Storage type": ["eMMC", "UFS 2.2", "UFS 3.1", "UFS 4.0"],
+      "Display size": ["5.4-inch", "5.8-inch", "6.1-inch", "6.2-inch", "6.4-inch", "6.5-inch", "6.7-inch", "6.8-inch"],
+      "SIM configuration": ["Single SIM", "Dual SIM", "eSIM", "Physical SIM + eSIM"],
+      "Packaging": ["Sealed box", "Box included", "Phone only"]
+    },
+    Laptop: {
+      "Processor": ["Intel Core i3", "Intel Core i5", "Intel Core i7", "Intel Core i9", "Intel Core Ultra", "AMD Ryzen 3", "AMD Ryzen 5", "AMD Ryzen 7", "AMD Ryzen 9", "Apple M1", "Apple M2", "Apple M3", "Apple M4"],
+      "Processor generation": ["8th Gen", "9th Gen", "10th Gen", "11th Gen", "12th Gen", "13th Gen", "14th Gen", "15th Gen"],
+      "RAM": ["4GB", "8GB", "12GB", "16GB", "24GB", "32GB", "64GB"],
       "Storage capacity": ["64GB", "128GB", "256GB", "512GB", "1TB", "2TB"],
       "Storage type": ["SSD", "HDD", "eMMC"],
+      "Display size": ["11.6-inch", "13.3-inch", "14-inch", "15.6-inch", "16-inch", "17.3-inch"],
       "Display resolution": ["HD", "FHD", "QHD", "4K"],
-      "Processor generation": ["8th Gen", "9th Gen", "10th Gen", "11th Gen", "12th Gen", "13th Gen", "14th Gen"]
+      "Operating system": ["Windows 11", "Windows 10", "macOS", "ChromeOS", "Linux"]
+    },
+    Tablet: {
+      "RAM": ["3GB", "4GB", "6GB", "8GB", "12GB", "16GB"],
+      "Storage capacity": ["32GB", "64GB", "128GB", "256GB", "512GB", "1TB"],
+      "Storage type": ["eMMC", "UFS"],
+      "Connectivity": ["Wi-Fi", "4G LTE", "5G", "Dual SIM"],
+      "Display size": ["7-inch", "8-inch", "10.1-inch", "11-inch", "12-inch"],
+      "Operating system": ["Android", "iPadOS", "Windows"]
     },
     Other: {
       "Storage capacity": ["64GB", "128GB", "256GB", "512GB", "1TB", "2TB"]
     }
   };
+
+  function clearAdminIdleTimeout() {
+    if (adminIdleTimeout) {
+      window.clearTimeout(adminIdleTimeout);
+      adminIdleTimeout = null;
+    }
+  }
+
+  function scheduleAdminIdleTimeout() {
+    clearAdminIdleTimeout();
+    if (!adminUserId) {
+      return;
+    }
+    adminIdleTimeout = window.setTimeout(async function () {
+      adminIdleTimeout = null;
+      try {
+        var result = await client.auth.signOut();
+        if (result.error) {
+          throw result.error;
+        }
+        showAuth("You were signed out after 30 minutes of inactivity. Sign in again to continue.", false);
+      } catch (error) {
+        console.error("Could not sign out an inactive admin session.", error);
+        setNotice("Could not sign out after inactivity. " + (error.message || "Try signing out manually."), true);
+        scheduleAdminIdleTimeout();
+      }
+    }, 30 * 60 * 1000);
+  }
+
+  ["pointerdown", "keydown", "touchstart", "scroll"].forEach(function (eventName) {
+    document.addEventListener(eventName, scheduleAdminIdleTimeout, { passive: true });
+  });
 
   function setNotice(message, isError) {
     notice.textContent = message;
@@ -142,7 +240,7 @@
     try {
       var result = await client
         .from("products")
-        .select("id, name, category, description, product_condition, images, image_url, active, price, stock, specifications")
+        .select("id, slug, name, category, description, product_condition, images, image_url, active, price, stock, specifications")
         .order("created_at", { ascending: false });
       if (result.error) {
         reportError(result.error, "Could not load inventory.");
@@ -494,6 +592,14 @@
     return brandInput.value === noBrandChoice ? "" : brandInput.value.trim();
   }
 
+  function getPredefinedBrands(category) {
+    return Object.keys(predefinedProductCatalog[category] || {});
+  }
+
+  function getPredefinedProductNames(category, brand) {
+    return (predefinedProductCatalog[category] || {})[brand] || [];
+  }
+
   function configureBrandInput() {
     var isCustom = brandInput.value === customChoice;
     brandCustomWrap.hidden = !isCustom;
@@ -505,6 +611,9 @@
 
   function populateBrandOptions(selectedBrand, chooseNoBrand) {
     var brands = [];
+    getPredefinedBrands(categoryInput.value).forEach(function (brand) {
+      brands.push(brand);
+    });
     products.forEach(function (product) {
       var brand = getProductBrand(product);
       if (product.category === categoryInput.value && brand && brands.indexOf(brand) === -1) {
@@ -554,6 +663,11 @@
     var selectedBrand = getSelectedBrand();
     var names = [];
     if (hasBrandChoice && (brandInput.value !== customChoice || selectedBrand)) {
+      getPredefinedProductNames(categoryInput.value, selectedBrand).forEach(function (name) {
+        if (names.indexOf(name) === -1) {
+          names.push(name);
+        }
+      });
       products.forEach(function (product) {
         if (product.category === categoryInput.value &&
             getProductBrand(product) === selectedBrand &&
@@ -630,8 +744,20 @@
         }
       });
       var categorySuggestions = commonSpecificationSuggestions[categoryInput.value] || {};
-      if (!values.length && categorySuggestions[key]) {
-        values = categorySuggestions[key].slice();
+      var suggestedValues = categoryInput.value === "Accessory"
+        ? []
+        : (categorySuggestions[key] || []);
+      suggestedValues.forEach(function (value) {
+        if (values.indexOf(value) === -1) {
+          values.push(value);
+        }
+      });
+      if (key === "Model" && categoryInput.value !== "Accessory") {
+        getPredefinedProductNames(categoryInput.value, selectedBrand).forEach(function (name) {
+          if (values.indexOf(name) === -1) {
+            values.push(name);
+          }
+        });
       }
       dataList.replaceChildren();
       values.forEach(function (value) {
@@ -656,7 +782,7 @@
     specificationGroups.forEach(function (group) {
       var isGeneralGroup = group.dataset.specCategory === "Other";
       group.hidden = isGeneralGroup
-        ? categoryInput.value === "Phone" || categoryInput.value === "Laptop"
+        ? categoryInput.value === "Phone" || categoryInput.value === "Laptop" || categoryInput.value === "Tablet"
         : group.dataset.specCategory !== categoryInput.value;
     });
   }
@@ -701,6 +827,19 @@
     return urls.slice(0, maxImageCount);
   }
 
+  function createProductSlug(name) {
+    var readableName = String(name)
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+    var suffix = window.crypto && typeof window.crypto.randomUUID === "function"
+      ? window.crypto.randomUUID().slice(0, 12)
+      : Math.random().toString(36).slice(2, 14);
+    return (readableName || "product") + "-" + suffix;
+  }
+
   function configureConditionOptions(preferredValue) {
     var isLaptop = categoryInput.value === "Laptop";
     var conditions = isLaptop
@@ -719,6 +858,8 @@
       ? "Laptops are listed as fairly used."
       : categoryInput.value === "Phone"
         ? "Choose Brand New, UK Used, or Fairly Used."
+        : categoryInput.value === "Tablet"
+          ? "Choose the condition shown to customers."
         : "Choose the condition shown to customers (optional for this category).";
   }
 
@@ -1007,6 +1148,7 @@
 
   async function authorizeUser(user) {
     if (!user) {
+      clearAdminIdleTimeout();
       adminUserId = null;
       showAuth("");
       return;
@@ -1033,7 +1175,11 @@
       showAuth("This account is not authorized to manage the store.", true);
       return;
     }
+    var isNewAdminSession = adminUserId !== user.id;
     adminUserId = user.id;
+    if (isNewAdminSession) {
+      scheduleAdminIdleTimeout();
+    }
     showAdmin();
     await Promise.all([loadProducts(), loadAnnouncement(), loadPromotions(), loadBlogPosts(), loadTestimonials()]);
   }
@@ -1062,6 +1208,7 @@
     }
     client.auth.onAuthStateChange(function (event, session) {
       if (event === "SIGNED_OUT") {
+        clearAdminIdleTimeout();
         products = [];
         blogPosts = [];
         testimonials = [];
@@ -1147,7 +1294,12 @@
     }
     configureProductNameInput();
     var product = findSelectedCatalogProduct();
-    populateSpecificationFields(product ? product.specifications : {});
+    var specifications = product ? product.specifications : {};
+    if (!product && productNameSelect.value !== customChoice &&
+        (categoryInput.value === "Phone" || categoryInput.value === "Laptop")) {
+      specifications = { Model: productNameSelect.value };
+    }
+    populateSpecificationFields(specifications);
     refreshSpecificationSuggestions();
   });
   productNameInput.addEventListener("input", refreshSpecificationSuggestions);
@@ -1696,6 +1848,7 @@
       await uploadSelectedImages(uploadedImageUrls);
       var images = retainedImageUrls.concat(uploadedImageUrls);
       var product = {
+        slug: existingProduct ? existingProduct.slug : createProductSlug(name),
         name: name,
         category: category,
         product_condition: condition || null,

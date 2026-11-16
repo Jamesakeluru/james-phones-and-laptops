@@ -10,6 +10,8 @@
   var categoryList = document.getElementById("managed-category-list");
   var resultsCount = document.getElementById("managed-results-count");
   var noResults = document.getElementById("managed-no-results");
+  var productImageDialog = document.getElementById("product-image-dialog");
+  var productImageDialogImage = document.getElementById("product-image-dialog-img");
   var cartStorageKey = "james-phones-cart-v1";
   var products = [];
   var selectedCategory = "";
@@ -302,6 +304,11 @@
         image.src = imageUrl;
         image.alt = product.name + " photo " + (index + 1);
         image.loading = "lazy";
+        image.addEventListener("click", function () {
+          productImageDialogImage.src = imageUrl;
+          productImageDialogImage.alt = image.alt;
+          productImageDialog.showModal();
+        });
         image.addEventListener("error", function () {
           image.hidden = true;
           if (!gallery.querySelector("img:not([hidden])")) {
@@ -446,6 +453,15 @@
     column.appendChild(card);
     return column;
   }
+
+  document.getElementById("product-image-dialog-close").addEventListener("click", function () {
+    productImageDialog.close();
+  });
+  productImageDialog.addEventListener("click", function (event) {
+    if (event.target === productImageDialog) {
+      productImageDialog.close();
+    }
+  });
 
   async function loadProducts() {
     var config = window.JAMES_PHONES_SUPABASE;
