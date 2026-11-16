@@ -4,7 +4,7 @@
 
 The storefront reads active products from Supabase. The admin page at `admin.html` requires a Supabase Auth account that is authorized in `public.admin_users`; product changes are protected by the database's row-level security policies.
 
-Admins can create, edit, publish, hide, and delete products; manage prices, stock, descriptions, category-specific specifications, and up to four photos; and set phone condition to Brand New, UK Used, or Fairly Used. The product form narrows brand choices by category and product-name choices by brand, then suggests specifications from matching inventory while allowing new values. Laptops are listed as Fairly Used. Product photos are stored in the Supabase `product-images` bucket. Unknown stock is kept unset rather than shown as zero, and blank specifications are omitted from customer listings.
+Admins can create, edit, publish, hide, and delete products; manage prices, stock, descriptions, category-specific specifications, and up to four photos; and set phone condition to Brand New, UK Used, or Fairly Used. The product form narrows brand choices by category and product-name choices by brand, then suggests specifications from matching inventory while allowing new values. Phone, Laptop, and Tablet have guided specification fields; Accessories remain flexible. Admin sessions require reauthentication after 30 minutes of inactivity. Laptops are listed as Fairly Used. Product photos are stored in the Supabase `product-images` bucket. Unknown stock is kept unset rather than shown as zero, and blank specifications are omitted from customer listings.
 
 Public pages use the JM logo in `images/store-logo.jpg` and the generated `images/share-preview.png` for search and social link previews.
 
@@ -14,13 +14,17 @@ The admin page also manages the three homepage offers, blog posts, and testimoni
 
 ## Orders
 
-Customers can search live inventory and filter by category buttons populated from active Supabase products. Adding a product gives a clear on-card confirmation and briefly disables the button to prevent accidental repeat clicks. Customers can review the order and send product details, specifications, and an optional contact number to WhatsApp. The site does not collect online payments. Product listings are loaded from Supabase without a hard-coded catalog fallback.
+Customers can search live inventory and filter by category buttons populated from active Supabase products. Product photos can be opened at their original resolution. Adding a product gives a clear on-card confirmation and briefly disables the button to prevent accidental repeat clicks. Customers can review the order and send product details, specifications, and an optional contact number to WhatsApp. The site does not collect online payments. Product listings are loaded from Supabase without a hard-coded catalog fallback.
+
+The public pages include crawler guidance in `robots.txt`, a static-page sitemap in `sitemap.xml`, and structured business metadata on the homepage. Product-specific indexable pages and a generated product sitemap are not yet implemented.
 
 The About page describes the shop and its phone and laptop repair services at Accra Circle.
 
 ## Database update
 
 After the original Supabase setup, run `supabase/migrations/20261114_offer_images_and_testimonials.sql` once in the Supabase SQL Editor. It adds the three offer image URL columns, creates the testimonials table with public-read/admin-write policies, and imports the current testimonial text so the entries remain editable.
+
+The `supabase/seeds/20261116_stock_from_shop_product_list.sql` file records the 163 inventory variants imported from the stock workbook. It uses listing prices, omits photos, and leaves quantities unknown because the workbook did not include stock counts.
 
 ## Configuration and security
 
