@@ -19,9 +19,6 @@
   var pageScrollControls = document.getElementById("managed-scroll-controls");
   var scrollTopButton = document.getElementById("managed-scroll-top");
   var scrollBottomButton = document.getElementById("managed-scroll-bottom");
-  var productImageDialog = document.getElementById("product-image-dialog");
-  var productImageDialogImage = document.getElementById("product-image-dialog-img");
-  var productImageDialogOriginal = document.getElementById("product-image-dialog-original");
   var cartStorageKey = "james-phones-cart-v1";
   var products = [];
   var selectedCategory = "";
@@ -385,24 +382,6 @@
         image.src = imageUrl;
         image.alt = product.name + " photo " + (index + 1);
         image.loading = "lazy";
-        image.tabIndex = 0;
-        image.setAttribute("role", "button");
-        image.setAttribute("aria-label", "View full-resolution photo " + (index + 1) + " of " + product.name);
-        image.title = "View full-resolution photo";
-        function showFullSizePhoto(event) {
-          event.preventDefault();
-          event.stopPropagation();
-          productImageDialogImage.src = imageUrl;
-          productImageDialogImage.alt = image.alt;
-          productImageDialogOriginal.href = imageUrl;
-          productImageDialog.showModal();
-        }
-        image.addEventListener("click", showFullSizePhoto);
-        image.addEventListener("keydown", function (event) {
-          if (event.key === "Enter" || event.key === " ") {
-            showFullSizePhoto(event);
-          }
-        });
         image.addEventListener("error", function () {
           image.hidden = true;
           if (!gallery.querySelector("img:not([hidden])")) {
@@ -448,10 +427,6 @@
         imageBox.appendChild(next);
         imageBox.appendChild(photoCount);
       }
-      var imageHint = document.createElement("span");
-      imageHint.className = "managed-image-hint";
-      imageHint.textContent = "Tap photo to view original size";
-      imageBox.appendChild(imageHint);
     }
     imageBox.appendChild(placeholder);
 
@@ -556,9 +531,6 @@
     return column;
   }
 
-  document.getElementById("product-image-dialog-close").addEventListener("click", function () {
-    productImageDialog.close();
-  });
   scrollTopButton.addEventListener("click", function () {
     window.scrollTo({ top: 0, behavior: scrollBehavior() });
   });
@@ -568,12 +540,6 @@
   window.addEventListener("scroll", updatePageScrollControls, { passive: true });
   window.addEventListener("resize", updatePageScrollControls);
   window.addEventListener("pageshow", scrollToRequestedInventory);
-  productImageDialog.addEventListener("click", function (event) {
-    if (event.target === productImageDialog) {
-      productImageDialog.close();
-    }
-  });
-
   async function loadProducts() {
     var config = window.JAMES_PHONES_SUPABASE;
     if (!config || !config.url || !config.anonKey ||
