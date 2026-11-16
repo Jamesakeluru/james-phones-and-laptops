@@ -19,6 +19,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.3px;
+  text-transform: uppercase;
 }
 
 .checkout-heading h1 {
@@ -243,13 +244,14 @@
 
 .checkout-send {
   width: 100%;
-  min-height: 44px;
+  min-height: 52px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #15745c;
   color: #fff;
-  font-size: 12px;
-  font-weight: 700;
+  box-shadow: 0 5px 14px rgba(21, 116, 92, .18);
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .checkout-send:hover:not(:disabled) {
@@ -278,6 +280,72 @@
   font-weight: 700;
 }
 
+.checkout-sticky-action[hidden] {
+  display: none !important;
+}
+
+.checkout-sticky-action {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  padding: 11px 16px calc(11px + env(safe-area-inset-bottom));
+  border-top: 1px solid #dfe7e2;
+  background: rgba(255, 255, 255, .97);
+  box-shadow: 0 -7px 24px rgba(27, 44, 36, .12);
+  backdrop-filter: blur(12px);
+}
+
+.checkout-sticky-inner {
+  display: flex;
+  width: min(100%, 1050px);
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 0 auto;
+}
+
+.checkout-sticky-summary {
+  display: grid;
+  gap: 3px;
+  color: #69746e;
+  font-size: 11px;
+}
+
+.checkout-sticky-summary strong {
+  color: #17241f;
+  font-size: 15px;
+}
+
+.checkout-sticky-send {
+  min-width: min(360px, 55vw);
+  min-height: 52px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 8px;
+  background: #15745c;
+  box-shadow: 0 5px 14px rgba(21, 116, 92, .2);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.checkout-sticky-send:hover:not(:disabled),
+.checkout-sticky-send:focus-visible {
+  background: #105e4a;
+}
+
+.checkout-sticky-send:disabled {
+  background: #a8b5ae;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+body.has-checkout-sticky-action .checkout-page {
+  padding-bottom: calc(132px + env(safe-area-inset-bottom));
+}
+
 @media (max-width: 760px) {
   .checkout-page {
     padding: 36px 15px 48px;
@@ -289,6 +357,31 @@
 
   .checkout-panel {
     padding: 18px;
+  }
+
+  .checkout-sticky-action {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .checkout-sticky-inner {
+    gap: 10px;
+  }
+
+  .checkout-sticky-summary {
+    font-size: 10px;
+  }
+
+  .checkout-sticky-summary strong {
+    font-size: 13px;
+  }
+
+  .checkout-sticky-send {
+    min-width: 0;
+    min-height: 48px;
+    flex: 1;
+    padding: 0 12px;
+    font-size: 12px;
   }
 }
 
